@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#include <iostream>
+#include "csg.h"
 
-int main()
-{
-    std::cout << "Hello world\n";
+namespace ocmesh {
     
-    return 0;
+        
+    
 }
