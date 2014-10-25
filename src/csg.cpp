@@ -16,8 +16,40 @@
 
 #include "csg.h"
 
+#include <algorithm>
+
 namespace ocmesh {
     
+    namespace details {
         
+        CSG::~CSG() = default;
+        
+        float sphere_t::distance(glm::vec3 const&from) {
+            return glm::length(from) - _radius;
+        }
+        
+        float plane_t::distance(glm::vec3 const&from) {
+            return glm::dot(_normal, from);
+        }
+        
+        float transform_t::distance(glm::vec3 const&from)
+        {
+            glm::vec4 v = { from.x, from.y, from.z, 1.0f};
+            
+            return child()->distance((transform() * v).xyz());
+        }
+        
+        float union_t::distance(const glm::vec3 &from) {
+            return std::min(left()->distance(from), right()->distance(from));
+        }
+        
+        float intersection_t::distance(const glm::vec3 &from) {
+            return std::max(left()->distance(from), - right()->distance(from));
+        }
+        
+        float difference_t::distance(const glm::vec3 &from) {
+            return std::max(left()->distance(from), right()->distance(from));
+        }
+    }
     
 }

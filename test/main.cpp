@@ -18,9 +18,13 @@
 
 #include "csg.h"
 
+using namespace ocmesh;
+
 int main()
 {
-    std::cout << "Hello world\n";
+    csg::ptr sphere = csg::sphere(42);
+    
+    assert(sphere->distance({ 0, 0, 0 }) == -42);
     
     return 0;
 }
