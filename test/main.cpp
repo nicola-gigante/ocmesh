@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "csg.h"
+#include "morton.h"
 
 using namespace ocmesh;
 
