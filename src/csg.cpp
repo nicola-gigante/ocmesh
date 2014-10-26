@@ -17,6 +17,7 @@
 #include "csg.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace ocmesh {
     
@@ -28,8 +29,10 @@ namespace ocmesh {
             return glm::length(from) - _radius;
         }
         
-        float plane_t::distance(glm::vec3 const&from) {
-            return glm::dot(_normal, from);
+        float cube_t::distance(glm::vec3 const&from) {
+            return std::max({std::abs(from.x),
+                             std::abs(from.y),
+                             std::abs(from.z)}) - _side / 2;
         }
         
         float transform_t::distance(glm::vec3 const&from)

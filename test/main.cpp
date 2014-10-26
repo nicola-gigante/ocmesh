@@ -24,7 +24,14 @@ int main()
 {
     csg::ptr sphere = csg::sphere(42);
     
-    assert(sphere->distance({ 0, 0, 0 }) == -42);
+    assert(sphere->distance({  0, 0, 0 }) == -42);
+    assert(sphere->distance({ 43, 0, 0 }) ==   1);
+    
+    csg::ptr cube = csg::cube(42);
+    
+    assert(cube->distance({   0,   0,   0}) == -21);
+    assert(cube->distance({  21,  21,  21}) ==   0);
+    assert(cube->distance({  22,  21,  21}) ==   1);
     
     return 0;
 }
