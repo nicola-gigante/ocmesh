@@ -21,6 +21,8 @@
 #include <utility>
 #include <type_traits>
 
+#include <std14/utility>
+
 /*
  * This header defines constexpr utility functions that come handy to 
  * precompute an std::array of values at compile time to implement lookup tables,
@@ -28,30 +30,6 @@
  */
 namespace tbl {
     namespace details {
-        /*
-         * Stripped down version of integer_sequence from C++14.
-         * Note: I don't use the index_sequence in std14/ 
-         *       because I want each header in this little 
-         *       library to be completely stand-alone
-         */
-        template<size_t ...>
-        struct index_sequence { };
-        
-        template<size_t I, size_t ...Idxs>
-        struct make_index_sequence_t
-        : make_index_sequence_t<I - 1, I - 1, Idxs...> { };
-        
-        template<size_t ...Idxs>
-        struct make_index_sequence_t<0, Idxs...> {
-            using type = index_sequence<Idxs...>;
-        };
-        
-        template<size_t N>
-        using make_index_sequence = typename make_index_sequence_t<N>::type;
-        
-        template<typename ...Ts>
-        using index_sequence_for = make_index_sequence<sizeof...(Ts)>;
-        
         /*
          * We cannot directly manipulate std::array instances because it doesn't
          * have constexpr member functions (which have been added in C++14)
@@ -87,12 +65,12 @@ namespace tbl {
             }
             
             constexpr operator std::array<T, N>() const {
-                return to_array(make_index_sequence<N>());
+                return to_array(std14::make_index_sequence<N>());
             }
             
         private:
             template<size_t ...Idxs>
-            std::array<T, N> to_array(index_sequence<Idxs...>) const {
+            std::array<T, N> to_array(std14::index_sequence<Idxs...>) const {
                 return { _data[Idxs]... };
             }
             
@@ -102,7 +80,7 @@ namespace tbl {
         // irange() implementation
         template<typename T, size_t Begin, size_t ...Idxs>
         constexpr
-        table<T, sizeof...(Idxs)> irange(details::index_sequence<Idxs...>)
+        table<T, sizeof...(Idxs)> irange(std14::index_sequence<Idxs...>)
         {
             return { T(Begin + Idxs)... };
         }
@@ -111,7 +89,7 @@ namespace tbl {
         template<typename T, size_t N, typename Ret, size_t ...Idxs>
         constexpr
         table<Ret, N> map(table<T, N> const&data, Ret (*f)(T),
-                               index_sequence<Idxs...>) {
+                          std14::index_sequence<Idxs...>) {
             return { f(data[Idxs])... };
         }
         
@@ -145,7 +123,7 @@ namespace tbl {
     template<typename T, T Begin, T End>
     constexpr
     table<T, End - Begin> irange() {
-        return irange<T, Begin>(details::make_index_sequence<End - Begin>());
+        return details::irange<T, Begin>(std14::make_index_sequence<End - Begin>());
     }
 
     /*
@@ -164,7 +142,7 @@ namespace tbl {
     template<typename T, size_t N, typename Ret>
     constexpr
     table<Ret, N> map(Ret (*f)(T), table<T, N> const&data) {
-        return map(data, f, details::make_index_sequence<N>());
+        return details::map(data, f, std14::make_index_sequence<N>());
     }
     
     /*
