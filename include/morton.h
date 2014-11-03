@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cmath>
 #include <glm/glm.hpp>
 
 #include "static_table.h"
@@ -28,31 +29,56 @@ namespace ocmesh {
 
     
     namespace details {
-        class voxel {
-            union {
-                uint64_t _code;
-                struct {
-                    uint64_t _material : 21;
-                    uint64_t _level    :  4;
-                    uint64_t _location : 39;
-                };
-            };
+        
+        template<typename T, REQUIRES(std::is_integral<T>::value)>
+        constexpr uint8_t clog2(T v, uint8_t log = 0) {
+            return v == 1 ? log : clog2(v / 2, log + 1);
+        }
+        
+        inline constexpr uint64_t cpow2(uint8_t v) {
+            return v == 0 ? 1 : 2 * cpow2(v - 1);
+        }
+        
+        class voxel
+        {
+        public:
+            static constexpr size_t precision     = 13;
+            static constexpr size_t location_bits = precision * 3;
+            static constexpr size_t level_bits    = clog2(precision) + 1;
+            static constexpr size_t material_bits = 64 - location_bits - level_bits;
+            
+            static constexpr size_t max_level    = precision;
+            static constexpr size_t max_material = cpow2(material_bits) - 1;
             
         public:
             voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
                 : _location(morton(coordinates)),
-                  _level(level), _material(material) { }
+                  _level(level), _material(material)
+            {
+                assert(level    < max_level    && "Cubie level out of range");
+                assert(material < max_material && "Material index out of range");
+            }
             
             voxel           (voxel const&) = default;
             voxel &operator=(voxel const&) = default;
             
-            uint8_t  level()    const { return _level; }
+            uint8_t  level()    const { return _level;    }
             uint32_t material() const { return _material; }
-            uint64_t code()     const { return _code; }
+            uint64_t location() const { return _location; }
+            uint64_t code()     const { return _code;     }
             
             glm::u16vec3 coordinates() const { assert("Unimplemented"); return {}; }
             
         private:
+            
+            union {
+                uint64_t _code;
+                struct {
+                    uint64_t _material : material_bits;
+                    uint64_t _level    : level_bits;
+                    uint64_t _location : location_bits;
+                };
+            };
             
             /*
              * Morton encoding calculation
@@ -73,15 +99,17 @@ namespace ocmesh {
              *
              * C++11 constexpr functions must be written in purely functional
              * style, so the implementation of split() below is the 
-             * constexpr-enabled version of this code:
+             * constexpr-enabled version of this code, which would be usable
+             * as is with C++14 constexpr:
              *
-             *    inline uint32_t split(uint32_t x) {
+             *    constexpr uint32_t split(uint32_t x) {
              *       x = (x | x << 16) & 0xff0000ff;
              *       x = (x | x <<  8) & 0x0f00f00f;
              *       x = (x | x <<  4) & 0xc30c30c3;
              *       x = (x | x <<  2) & 0x49249249;
              *       return x;
              *    }
+             *
              */
             static constexpr uint32_t masks[] = {
                 0,
@@ -105,33 +133,24 @@ namespace ocmesh {
             
             uint64_t morton(glm::u16vec3 coordinates)
             {
-                static constexpr
-                auto xmask = tbl::map(split, tbl::irange<uint32_t, 0, 256>());
+                static constexpr auto xmask = tbl::map<0, 256>(split);
                 static constexpr auto ymask = tbl::map(shiftl<1>, xmask);
                 static constexpr auto zmask = tbl::map(shiftl<2>, xmask);
                 
-                union {
-                    uint16_t value;
-                    struct {
-                        uint8_t low;
-                        uint8_t high;
-                    };
-                } x = { coordinates.x },
-                  y = { coordinates.y },
-                  z = { coordinates.z };
+                // All this union/bitfield stuff is far more clear than
+                // a bunch of shift/masks etc...
+                struct {
+                    int low;
+                    int high;
+                } x = { coordinates.x & 0xFF, (coordinates.x >> 8) & 0xFF },
+                  y = { coordinates.y & 0xFF, (coordinates.y >> 8) & 0xFF },
+                  z = { coordinates.z & 0xFF, (coordinates.z >> 8) & 0xFF };
                 
-                union {
-                    struct {
-                        uint64_t low  : 24;
-                        uint64_t high : 60;
-                    };
-                    uint64_t value;
-                } answer = {
-                    zmask[z.low]  | ymask[y.low]  | xmask[x.low],
-                    zmask[z.high] | ymask[y.high] | xmask[x.high]
-                };
+                uint64_t answer =
+                    ((zmask[z.high] | ymask[y.high] | xmask[x.high]) << 24) |
+                     (zmask[z.low]  | ymask[y.low]  | xmask[x.low]);
                 
-                return answer.value;
+                return answer;
             }
         };
         
@@ -160,8 +179,11 @@ namespace ocmesh {
         }
         
         static_assert(sizeof(voxel) == sizeof(uint64_t),
-                      "Something wrong in the bitfield");
+                      "Something wrong with the voxel bitfield. "
+                      "Check the precision.");
     }
+    
+    using details::voxel;
 }
 
 
