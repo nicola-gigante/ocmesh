@@ -139,9 +139,9 @@ namespace tbl {
      * The map() function returns the given sequence transformed by applying
      * the given function to every element of the sequence
      */
-    template<typename T, size_t N, typename Ret>
+    template<size_t B = 0, size_t N, typename T, typename Ret>
     constexpr
-    table<Ret, N> map(Ret (*f)(T), table<T, N> const&data) {
+    table<Ret, N> map(Ret (*f)(T), table<T, N> const&data = irange<T, B, N>()) {
         return details::map(data, f, std14::make_index_sequence<N>());
     }
     
@@ -149,18 +149,18 @@ namespace tbl {
      * The foldr() function accumulates on the right the result of a 
      * binary function applied recursively to all the elements of a sequence
      */
-    template<typename A, typename B, size_t N>
+    template<size_t Z = 0, size_t N, typename A, typename B>
     constexpr
-    B foldr(B (*f)(A, B), B zero, table<A, N> const&data) {
+    B foldr(B (*f)(A, B), B zero, table<A, N> const&data = irange<A, Z, N>()) {
         return foldr(f, zero, data, 0);
     }
     
     /*
      * Same as foldr() but accumulates on the left
      */
-    template<typename A, typename B, size_t N>
+    template<size_t Z = 0, size_t N, typename A, typename B>
     constexpr
-    B foldl(B (*f)(B, A), B zero, table<A, N> const&data) {
+    B foldl(B (*f)(B, A), B zero, table<A, N> const&data = irange<A, Z, N>()) {
         return foldl(f, zero, data, 0);
     }
 

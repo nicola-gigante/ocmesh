@@ -157,9 +157,17 @@ namespace ```std14``` becomes an alias for ```std```, so you can use the
 library-provided symbols out-of-the-box.
 
 Provided entities are:
-- ```std::make_unique``` in the ```std14/memory``` header
+- ```std::make_unique``` in the ```<std14/memory>``` header
 - Type traits aliases (e.g. ```enable_if_t<>``` instead of ```enable_if<>```)
-  in ```std14/type_traits```
-- ```std::integer_sequence``` and related facilities in the ```std14/utility```
+  in ```<std14/type_traits>```
+- ```std::integer_sequence``` and related facilities in the ```<std14/utility>```
   header.
-
+- ```std::experimental::string_view``` in the ```<std14/experimental/string_view>```
+  header.
+  It's a fairly accurate implementation of string_view from the Library
+  Foundamentals TS, even if I've not tested anything for compliance with the
+  actual specification (and I've left out some boring bits). 
+- ```std::experimental::array_view```, in ```<std14/experimental/array_view>```
+  is a simplistic analogue of ```llvm::ArrayRef```, or of the upcoming
+  ```array_view``` standard proposal, but only a simple unidimensional view,
+  without all the fancy multidimensional stuff.

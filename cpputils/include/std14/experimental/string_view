@@ -1,0 +1,271 @@
+// -*- C++ -*-
+/*
+ * Copyright 2014 Nicola Gigante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef CPPUTILS_STRING_VIEW_H__
+#define CPPUTILS_STRING_VIEW_H__
+
+/*
+ * This is an implementation of the string_view class from the
+ * Library Foundamentals TS. It would be better to say that it's "inspired" by
+ * it, as I've not paid attention to make it compilant with the specification
+ * in any single detail. If you want a perfectly compilant version, check out
+ * the one from LLVM's libcxx.
+ *
+ * If you use this header but then you happen to build with a fairly recent
+ * standard library that already provides <experimental/...> headers, you 
+ * can define the HAS_EXPERIMENTAL_STRINGVIEW macro to fallback to it.
+ */
+
+#include <string>
+#include <stdexcept>
+
+#if __cplusplus > 201103
+    namespace std14 = std;
+    #define STD14 std
+    #define CXX14_CONSTEXPR constexpr
+#else
+    #define STD14 std14
+    #define CXX14_CONSTEXPR
+#endif
+
+#if defined(HAS_EXPERIMENTAL_STRINGVIEW)
+#include <experimental/string_view>
+#else
+
+namespace STD14 {
+    namespace experimental {
+    
+        template<typename CharT, typename Traits = std::char_traits<CharT>>
+        class basic_string_view
+        {
+        public:
+            using traits_type            = Traits;
+            using value_type             = CharT;
+            using const_pointer	         = CharT const*;
+            using const_reference        = CharT const&;
+            using const_iterator         = CharT const*;
+            using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+            
+            using pointer                = const_pointer;
+            using reference	             = const_reference;
+            using iterator               = const_iterator;
+            using reverse_iterator       = const_reverse_iterator;
+            
+            using size_type              = std::size_t;
+            using difference_type        = std::ptrdiff_t;
+            
+            static constexpr
+            size_type npos = std::numeric_limits<size_type>::max();
+            
+        public:
+            /*
+             * Constructors
+             */
+            constexpr basic_string_view() = default;
+            constexpr basic_string_view(basic_string_view const&) = default;
+            
+            template<typename Allocator>
+            basic_string_view(std::basic_string<CharT, Traits, Allocator>const& str)
+                noexcept : _data(str.data(), str.size()) { }
+            
+            constexpr basic_string_view(CharT const*str, size_type count)
+                noexcept : _data(str), _size(count) { }
+            
+            constexpr basic_string_view(CharT const*str)
+                : _data(str), _size(Traits::length(str)) { }
+            
+            /*
+             * Assignment
+             */
+            CXX14_CONSTEXPR
+            basic_string_view& operator=(basic_string_view const&) = default;
+            
+            /*
+             * Iterators
+             */
+            constexpr const_iterator begin()  const { return _data;           }
+            constexpr const_iterator end()    const { return begin() + _size; }
+
+            constexpr
+            const_iterator rbegin() const { return reverse_iterator(end());   }
+            constexpr
+            const_iterator rend()   const { return reverse_iterator(begin()); }
+            
+            constexpr const_iterator cbegin()  const { return begin();        }
+            constexpr const_iterator cend()    const { return end();          }
+            constexpr const_iterator crbegin() const { return rbegin();       }
+            constexpr const_iterator crend()   const { return rend();         }
+            
+            /*
+             * Element access
+             */
+            constexpr const_reference operator[](size_type pos) const {
+                return _data[pos];
+            }
+            
+            constexpr const_reference at(size_type pos) const {
+                return pos < _size ? _data[pos]
+                       : throw std::out_of_range("basic_string_view::at()");
+            }
+            
+            constexpr const_reference front() const { return _data[0];         }
+            constexpr const_reference back()  const { return _data[_size - 1]; }
+            
+            const_pointer data() const { return _data; }
+            
+            /*
+             * Capacity
+             */
+            constexpr size_type size()   const { return _size; }
+            constexpr size_type length() const { return _size; }
+            
+            constexpr bool empty() const { return _size; }
+            
+            constexpr size_type max_size() const {
+                return std::numeric_limits<size_type>::max();
+            }
+            
+            /*
+             * Modifiers
+             */
+            CXX14_CONSTEXPR void clear() {
+                *this = basic_string_view();
+            }
+            
+            CXX14_CONSTEXPR void remove_prefix(size_type n) {
+                _data += n;
+            }
+            
+            CXX14_CONSTEXPR void remove_suffix(size_type n) {
+                _size -= n;
+            }
+            
+            CXX14_CONSTEXPR void swap(basic_string_view const&v) noexcept {
+                using std::swap;
+                swap(_data, v._data);
+                swap(_size, v._size);
+            }
+            
+            
+            /*
+             * String operations.
+             * The TS specifies a lot of useless functions here, because of
+             * compatibility with the legacy std::string interface. 
+             * I don't care, use standard algorithms instead.
+             * Here are the only useful ones.
+             */
+            template<class Allocator = std::allocator<CharT>>
+            std::basic_string<CharT, Traits, Allocator>
+            to_string(Allocator const& alloc = Allocator()) const {
+                return { _data, _size, alloc };
+            }
+            
+            template<class Allocator>
+            explicit operator std::basic_string<CharT, Traits, Allocator>() const {
+                return to_string<Allocator>();
+            }
+            
+            constexpr
+            basic_string_view substr(size_type pos = 0,
+                                     size_type count = npos) const
+            {
+                return pos < size() ?
+                         basic_string_view(begin() + pos,
+                                           begin() + pos +
+                                             std::min(count, size() - pos) ) :
+                       throw std::out_of_range("basic_string_view::substr()");
+            }
+            
+            CXX14_CONSTEXPR
+            int compare(basic_string_view v) const {
+                int rlen = std::min(size(), v.size());
+                int result = Traits::compare(data(), v.data(), rlen);
+                
+                if(result == 0)
+                    return size() < v.size()  ? -1 :
+                           size() > v.size()  ?  1 : 0;
+                
+                return result;
+            }
+            
+        private:
+            const_pointer _data = nullptr;
+            size_type _size = 0;
+        };
+        
+        /*
+         * Non-member operators
+         */
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator==(basic_string_view <CharT,Traits> lhs,
+                        basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) == 0;
+        }
+
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator!=(basic_string_view <CharT,Traits> lhs,
+                        basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) != 0;
+        }
+
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator<(basic_string_view <CharT,Traits> lhs,
+                       basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) < 0;
+        }
+
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator<=(basic_string_view <CharT,Traits> lhs,
+                        basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) <= 0;
+        }
+
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator>(basic_string_view <CharT,Traits> lhs,
+                       basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) > 0;
+        }
+
+        template< class CharT, class Traits >
+        CXX14_CONSTEXPR
+        bool operator>=(basic_string_view <CharT,Traits> lhs,
+                        basic_string_view <CharT,Traits> rhs ) {
+            return lhs.compare(rhs) >= 0;
+        }
+        
+        using string_view    = basic_string_view<char>;
+        using wstring_view   = basic_string_view<wchar_t>;
+        using u16string_view = basic_string_view<char16_t>;
+        using u32string_view = basic_string_view<char32_t>;
+        
+    }
+
+} // namespace STD14
+
+#ifdef STD14
+    #undef STD14
+#endif
+
+#endif // defined(HAS_EXPERIMENTAL_STRINGVIEW)
+#endif // include guard
+
+

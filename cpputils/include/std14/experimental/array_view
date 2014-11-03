@@ -1,0 +1,153 @@
+// -*- C++ -*-
+/*
+ * Copyright 2014 Nicola Gigante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef CPPUTILS_ARRAY_VIEW_H__
+#define CPPUTILS_ARRAY_VIEW_H__
+
+/*
+ * This is a simple array_view class, inspired by llvm::ArrayRef and the
+ * upcoming array_view standard proposal. It's much simpler of the last one,
+ * as I absolutely don't care about the multidimensional and slicing stuff.
+ */
+
+#if __cplusplus > 201103
+    namespace std14 = std;
+    #define STD14 std
+    #define CXX14_CONSTEXPR constexpr
+#else
+    #define STD14 std14
+    #define CXX14_CONSTEXPR
+#endif
+
+#include <vector>
+#include <array>
+
+namespace STD14 {
+
+    namespace experimental {
+    
+        template<typename T>
+        class array_view
+        {
+        public:
+            using value_type             = T;
+            using const_pointer	         = T const*;
+            using const_reference        = T const&;
+            using const_iterator         = T const*;
+            using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+            
+            using pointer                = const_pointer;
+            using reference	             = const_reference;
+            using iterator               = const_iterator;
+            using reverse_iterator       = const_reverse_iterator;
+            
+            using size_type              = std::size_t;
+            using difference_type        = std::ptrdiff_t;
+            
+        public:
+            /*
+             * Constructors
+             */
+            constexpr array_view() = default;
+            constexpr array_view(array_view const&) = default;
+            
+            constexpr array_view(const_pointer data, size_type size)
+                : _data(data), _size(size) { }
+            
+            template<typename Allocator>
+            constexpr array_view(std::vector<T, Allocator> const&v)
+                : _data(v.data()), _size(v.size()) { }
+            
+            template<size_t N>
+            constexpr array_view(std::array<T, N> const&a)
+                : _data(a.data()), _size(N) { }
+            
+            /*
+             * Assignment
+             */
+            CXX14_CONSTEXPR
+            array_view &operator=(array_view const&) = default;
+            
+            /*
+             * Iterators
+             */
+            constexpr const_iterator begin()  const { return _data;           }
+            constexpr const_iterator end()    const { return begin() + _size; }
+            
+            constexpr
+            const_iterator rbegin() const { return reverse_iterator(end());   }
+            constexpr
+            const_iterator rend()   const { return reverse_iterator(begin()); }
+            
+            constexpr const_iterator cbegin()  const { return begin();        }
+            constexpr const_iterator cend()    const { return end();          }
+            constexpr const_iterator crbegin() const { return rbegin();       }
+            constexpr const_iterator crend()   const { return rend();         }
+            
+            /*
+             * Element access
+             */
+            constexpr const_reference operator[](size_type pos) const {
+                return _data[pos];
+            }
+            
+            constexpr const_reference at(size_type pos) const {
+                return pos < _size ? _data[pos]
+                       : throw std::out_of_range("basic_string_view::at()");
+            }
+            
+            constexpr const_reference front() const { return _data[0];         }
+            constexpr const_reference back()  const { return _data[_size - 1]; }
+            
+            const_pointer data() const { return _data; }
+            
+            
+            /*
+             * Capacity
+             */
+            constexpr size_type size()  const { return _size; }
+            constexpr bool      empty() const { return _size; }
+            
+            /*
+             * Modifiers
+             */
+            CXX14_CONSTEXPR void clear() {
+                *this = array_view();
+            }
+            
+            CXX14_CONSTEXPR void remove_prefix(size_type n) {
+                _data += n;
+            }
+            
+            CXX14_CONSTEXPR void remove_suffix(size_type n) {
+                _size -= n;
+            }
+            
+            CXX14_CONSTEXPR void swap(array_view const&v) noexcept {
+                using std::swap;
+                swap(_data, v._data);
+                swap(_size, v._size);
+            }
+            
+        private:
+            const_pointer _data = nullptr;
+            size_type _size = 0;
+        };
+    }
+}
+
+#endif // include guard

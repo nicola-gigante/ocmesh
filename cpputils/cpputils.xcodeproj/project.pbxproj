@@ -24,6 +24,8 @@
 
 /* Begin PBXFileReference section */
 		C920055119FE68FC0077099B /* meta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = meta.h; sourceTree = "<group>"; };
+		C946218E19FFC5480024FA6F /* string_view */ = {isa = PBXFileReference; lastKnownFileType = text; name = string_view; path = experimental/string_view; sourceTree = "<group>"; };
+		C946218F19FFDA150024FA6F /* array_view */ = {isa = PBXFileReference; lastKnownFileType = text; name = array_view; path = experimental/array_view; sourceTree = "<group>"; };
 		C9ABB90E19AC6B6A009FBA83 /* cpputils */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cpputils; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9ABB91A19AC6C76009FBA83 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = test/main.cpp; sourceTree = SOURCE_ROOT; };
 		C9ABB91D19AC6C96009FBA83 /* has_member.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = has_member.h; sourceTree = "<group>"; };
@@ -93,6 +95,8 @@
 				C9E1D7E619B3203F0058E4C4 /* memory */,
 				C9E1D7E719B3203F0058E4C4 /* type_traits */,
 				C9E1D7E819B3203F0058E4C4 /* utility */,
+				C946218E19FFC5480024FA6F /* string_view */,
+				C946218F19FFDA150024FA6F /* array_view */,
 			);
 			path = std14;
 			sourceTree = "<group>";
@@ -194,10 +198,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-std=c++1y",
-				);
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -237,10 +238,7 @@
 					"$(SRCROOT)/include",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-std=c++1y",
-				);
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				SDKROOT = macosx;
 			};
 			name = Release;
