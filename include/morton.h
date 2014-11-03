@@ -18,6 +18,7 @@
 #ifndef OCMESH_MORTON_H
 #define OCMESH_MORTON_H
 
+#include <cassert>
 #include <cstdint>
 #include <glm/glm.hpp>
 
@@ -25,55 +26,141 @@
 
 namespace ocmesh {
 
-    /*
-     * split()
-     *
-     * Compile-time precomputation of bits interleaving table for morton 
-     * encoding construction.
-     * C++11 constexpr functions must be written in purely functional style, so
-     * what follows is the constexpr-enabled version of this code:
-     *
-     *    inline uint32_t split(uint32_t x) {
-     *       x = (x | x << 16) & 0xff0000ff;
-     *       x = (x | x <<  8) & 0x0f00f00f;
-     *       x = (x | x <<  4) & 0xc30c30c3;
-     *       x = (x | x <<  2) & 0x49249249;
-     *       return x;
-     *    }
-     */
+    
     namespace details {
-        constexpr uint32_t masks[] = {
-            0,
-            0x49249249, 0xc30c30c3,
-            0x0f00f00f, 0xff0000ff
+        class voxel {
+            union {
+                uint64_t _code;
+                struct {
+                    uint64_t _material : 21;
+                    uint64_t _level    :  4;
+                    uint64_t _location : 39;
+                };
+            };
+            
+        public:
+            voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
+                : _location(morton(coordinates)),
+                  _level(level), _material(material) { }
+            
+            voxel           (voxel const&) = default;
+            voxel &operator=(voxel const&) = default;
+            
+            uint8_t  level()    const { return _level; }
+            uint32_t material() const { return _material; }
+            uint64_t code()     const { return _code; }
+            
+            glm::u16vec3 coordinates() const { assert("Unimplemented"); return {}; }
+            
+        private:
+            
+            /*
+             * Morton encoding calculation
+             *
+             * The morton code is obtained by interleaving the bits of the
+             * x y z coordinates. This can be done with a constant number of
+             * magic bitwise operations. The fastest implementation available is
+             * based on the pre-computation of a table of bitmasks for 8 bit
+             * values, that are composed to interleave our 16bits words.
+             *
+             * Thanks to the C++11 constexpr keyword, we can tell the compiler
+             * to precompute the table and statically put the results directly
+             * as data into the executable.
+             *
+             * The split() function is what computes the single elements
+             * of the table. The code in the morton() function then uses the
+             * facilities from static_table.h to fill the tables.
+             *
+             * C++11 constexpr functions must be written in purely functional
+             * style, so the implementation of split() below is the 
+             * constexpr-enabled version of this code:
+             *
+             *    inline uint32_t split(uint32_t x) {
+             *       x = (x | x << 16) & 0xff0000ff;
+             *       x = (x | x <<  8) & 0x0f00f00f;
+             *       x = (x | x <<  4) & 0xc30c30c3;
+             *       x = (x | x <<  2) & 0x49249249;
+             *       return x;
+             *    }
+             */
+            static constexpr uint32_t masks[] = {
+                0,
+                0x49249249, 0xc30c30c3,
+                0x0f00f00f, 0xff0000ff
+            };
+            
+            static constexpr uint32_t split(uint32_t x, int level) {
+                return level == 0 ? x :
+                       split((x | x << (1 << level)) & masks[level], level - 1);
+            }
+            
+            static constexpr uint32_t split(uint32_t x) {
+                return split(x, 4);
+            }
+            
+            template<uint8_t S>
+            static constexpr uint32_t shiftl(uint32_t x) {
+                return x << S;
+            }
+            
+            uint64_t morton(glm::u16vec3 coordinates)
+            {
+                static constexpr
+                auto xmask = tbl::map(split, tbl::irange<uint32_t, 0, 256>());
+                static constexpr auto ymask = tbl::map(shiftl<1>, xmask);
+                static constexpr auto zmask = tbl::map(shiftl<2>, xmask);
+                
+                union {
+                    uint16_t value;
+                    struct {
+                        uint8_t low;
+                        uint8_t high;
+                    };
+                } x = { coordinates.x },
+                  y = { coordinates.y },
+                  z = { coordinates.z };
+                
+                union {
+                    struct {
+                        uint64_t low  : 24;
+                        uint64_t high : 60;
+                    };
+                    uint64_t value;
+                } answer = {
+                    zmask[z.low]  | ymask[y.low]  | xmask[x.low],
+                    zmask[z.high] | ymask[y.high] | xmask[x.high]
+                };
+                
+                return answer.value;
+            }
         };
         
-        constexpr uint32_t split(uint32_t x, int level) {
-            return level == 0 ? x :
-                    split((x | x << (1 << level)) & masks[level], level - 1);
+        bool operator==(voxel const&v1, voxel const&v2) {
+            return v1.code() == v2.code();
         }
         
-        constexpr uint32_t split(uint32_t x) {
-            return details::split(x, 4);
+        bool operator!=(voxel const&v1, voxel const&v2) {
+            return v1.code() != v2.code();
         }
         
-        template<uint8_t S>
-        constexpr uint32_t shiftl(uint32_t x) {
-            static_assert(S < 32, "Please don't invoke undefined behaviour");
-            return x << S;
+        bool operator<(voxel const&v1, voxel const&v2) {
+            return v1.code() < v2.code();
         }
         
-        inline uint64_t morton(uint32_t x, uint32_t y, uint32_t z)
-        {
-            static constexpr auto xmask =
-                tbl::map(split, tbl::irange<uint32_t, 0, 256>());
-            static constexpr auto ymask = tbl::map(shiftl<1>, xmask);
-            static constexpr auto zmask = tbl::map(shiftl<2>, xmask);
-            
-            // TODO...
-            
-            return xmask[0] + ymask[0] + zmask[0];
+        bool operator>(voxel const&v1, voxel const&v2) {
+            return v1.code() > v2.code();
         }
+        
+        bool operator<=(voxel const&v1, voxel const&v2) {
+            return v1.code() <= v2.code();
+        }
+        
+        bool operator>=(voxel const&v1, voxel const&v2) {
+            return v1.code() >= v2.code();
+        }
+        
+        static_assert(sizeof(voxel) == sizeof(uint64_t),
+                      "Something wrong in the bitfield");
     }
 }
 

@@ -37,7 +37,7 @@ namespace ocmesh {
         
         float transform_t::distance(glm::vec3 const&from)
         {
-            glm::vec4 v = { from.x, from.y, from.z, 1.0f};
+            glm::vec4 v = { from.x, from.y, from.z, 1.0f };
             
             return child()->distance((transform() * v).xyz());
         }
@@ -54,5 +54,4 @@ namespace ocmesh {
             return std::max(left()->distance(from), right()->distance(from));
         }
     }
-    
 }

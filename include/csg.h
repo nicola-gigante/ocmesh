@@ -17,10 +17,14 @@
 #ifndef OCMESH_CSG_H__
 #define OCMESH_CSG_H__
 
+#include "meta.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include <std14/memory>
+#include <iterator>
+#include <vector>
 
 namespace ocmesh {
 
@@ -35,7 +39,22 @@ namespace ocmesh {
             virtual float distance(glm::vec3 const& from) = 0;
         };
         
-        using csg_ptr = std::unique_ptr<CSG>;
+        using ptr = std::unique_ptr<CSG>;
+        
+        class Scene {
+        public:
+            Scene() = default;
+            Scene(Scene const&) = default;
+            Scene(Scene     &&) = default;
+            
+            Scene& operator=(Scene const&) = default;
+            Scene& operator=(Scene     &&) = default;
+            
+            
+            
+        private:
+            std::vector<ptr> _objects;
+        };
         
         class sphere_t : public CSG
         {
@@ -62,11 +81,11 @@ namespace ocmesh {
         };
         
         class binary_operation_t : public CSG {
-            csg_ptr _left;
-            csg_ptr _right;
+            ptr _left;
+            ptr _right;
             
         public:
-            binary_operation_t(csg_ptr left, csg_ptr right)
+            binary_operation_t(ptr left, ptr right)
                 : _left(std::move(left)), _right(std::move(right)) { }
             
             CSG *left()  const { return _left.get();  }
@@ -96,11 +115,11 @@ namespace ocmesh {
         
         class transform_t : public CSG
         {
-            csg_ptr   _child;
+            ptr       _child;
             glm::mat4 _transform;
             
         public:
-            transform_t(csg_ptr child, glm::mat4 const&transform)
+            transform_t(ptr child, glm::mat4 const&transform)
                 : _child(std::move(child)), _transform(transform) { }
             
             CSG *child() const { return _child.get(); }
@@ -111,116 +130,118 @@ namespace ocmesh {
         
         
         // Primitives
-        inline csg_ptr sphere(float radius) {
+        inline ptr sphere(float radius) {
             return std14::make_unique<sphere_t>(radius);
         }
         
-        inline csg_ptr cube(float side) {
+        inline ptr cube(float side) {
             return std14::make_unique<cube_t>(side);
         }
         
         // Combining nodes
-        inline csg_ptr unite(csg_ptr left, csg_ptr right) {
+        inline ptr unite(ptr left, ptr right) {
             return std14::make_unique<union_t>(std::move(left),
                                                std::move(right));
         }
         
         template<typename ...Args>
-        inline csg_ptr unite(csg_ptr node, Args&& ...args) {
+        inline ptr unite(ptr node, Args&& ...args) {
             return unite(std::move(node), unite(std::forward<Args>(args)...));
         }
         
-        inline csg_ptr intersect(csg_ptr left, csg_ptr right) {
+        inline ptr intersect(ptr left, ptr right) {
             return std14::make_unique<intersection_t>(std::move(left),
                                                       std::move(right));
         }
         
         template<typename ...Args>
-        inline csg_ptr intersect(csg_ptr node, Args&& ...args) {
-            return intersect(std::move(node), unite(std::forward<Args>(args)...));
+        inline ptr intersect(ptr node, Args&& ...args) {
+            return intersect(std::move(node),
+                             unite(std::forward<Args>(args)...));
         }
         
-        inline csg_ptr subtract(csg_ptr left, csg_ptr right) {
+        inline ptr subtract(ptr left, ptr right) {
             return std14::make_unique<difference_t>(std::move(left),
                                                     std::move(right));
         }
         
         template<typename ...Args>
-        inline csg_ptr subtract(csg_ptr node, Args&& ...args) {
-            return subtract(std::move(node), unite(std::forward<Args>(args)...));
+        inline ptr subtract(ptr node, Args&& ...args) {
+            return subtract(std::move(node),
+                            unite(std::forward<Args>(args)...));
         }
         
         // Transform nodes
         // Use this function only if you know what you're doing.
         // Use scale/rotate/translate instead.
         // The matrix must be a transform from object to world space
-        inline csg_ptr transform(csg_ptr node, glm::mat4 const&matrix) {
+        inline ptr transform(ptr node, glm::mat4 const&matrix) {
             return std14::make_unique<transform_t>(std::move(node), matrix);
         }
         
-        inline csg_ptr scale(csg_ptr node, glm::vec3 const&factors) {
+        inline ptr scale(ptr node, glm::vec3 const&factors) {
             assert(glm::all(glm::notEqual(factors, {})) &&
                    "Scaling factor components must be non-zero");
             return transform(std::move(node),
                              glm::scale(glm::vec3(1, 1, 1) / factors));
         }
         
-        inline csg_ptr scale(csg_ptr node, float factor) {
+        inline ptr scale(ptr node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), { factor, factor, factor });
         }
         
-        inline csg_ptr xscale(csg_ptr node, float factor) {
+        inline ptr xscale(ptr node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {factor, 1, 1});
         }
         
-        inline csg_ptr yscale(csg_ptr node, float factor) {
+        inline ptr yscale(ptr node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {1, factor, 1});
         }
         
-        inline csg_ptr zscale(csg_ptr node, float factor) {
+        inline ptr zscale(ptr node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {1, 1, factor});
         }
         
-        inline csg_ptr rotate(csg_ptr node, float angle, glm::vec3 const&axis) {
+        inline ptr rotate(ptr node, float angle, glm::vec3 const&axis) {
             return transform(std::move(node), glm::rotate(-angle, axis));
         }
         
-        inline csg_ptr xrotate(csg_ptr node, float angle) {
+        inline ptr xrotate(ptr node, float angle) {
             return rotate(std::move(node), angle, {1, 0, 0});
         }
         
-        inline csg_ptr yrotate(csg_ptr node, float angle) {
+        inline ptr yrotate(ptr node, float angle) {
             return rotate(std::move(node), angle, {0, 1, 0});
         }
         
-        inline csg_ptr zrotate(csg_ptr node, float angle) {
+        inline ptr zrotate(ptr node, float angle) {
             return rotate(std::move(node), angle, {0, 0, 1});
         }
         
-        inline csg_ptr translate(csg_ptr node, glm::vec3 const&offsets) {
+        inline ptr translate(ptr node, glm::vec3 const&offsets) {
             return transform(std::move(node), glm::translate(-offsets));
         }
         
-        inline csg_ptr xtranslate(csg_ptr node, float offset) {
+        inline ptr xtranslate(ptr node, float offset) {
             return translate(std::move(node), {offset, 0, 0});
         }
         
-        inline csg_ptr ytranslate(csg_ptr node, float offset) {
+        inline ptr ytranslate(ptr node, float offset) {
             return translate(std::move(node), {0, offset, 0});
         }
         
-        inline csg_ptr ztranslate(csg_ptr node, float offset) {
+        inline ptr ztranslate(ptr node, float offset) {
             return translate(std::move(node), {0, 0, offset});
         }
     }
     
     namespace csg {
         using details::CSG;
-        using details::csg_ptr;
+        using details::ptr;
         using details::sphere;
         using details::cube;
         
@@ -244,7 +265,6 @@ namespace ocmesh {
         using details::ytranslate;
         using details::ztranslate;
         
-        using ptr = csg_ptr;
     }
 }
 
