@@ -27,6 +27,11 @@ It's important to store the Morton code on the highest bits, followed by the
 tree level, followed by the material code. In this way the Morton order follows
 from the natural order of the integers.
 
+### Managing the tree
+The linear octree is an array of ordered location codes. Managing the tree
+imply the implementation of functions to recognize neighbors of a cubie from
+its location code.
+
 ### Octree subdivision and intersection testing with the CSG
 We have to determine which CSG object contains every cubie. The user building 
 the CSG have to guarantee that the objects made of different materials do not

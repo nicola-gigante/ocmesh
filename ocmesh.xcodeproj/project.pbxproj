@@ -11,16 +11,6 @@
 		C96E770219F951FB00148261 /* csg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E770119F951FB00148261 /* csg.cpp */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		C9A60E6C19FBD79300C8297B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = C9ABB90E19AC6B6A009FBA83;
-			remoteInfo = cpputils;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		C96E75E419F8F69B00148261 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -292,7 +282,7 @@
 		C96E76FC19F951CB00148261 /* csg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = csg.h; sourceTree = "<group>"; };
 		C96E76FF19F951E800148261 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C96E770119F951FB00148261 /* csg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg.cpp; sourceTree = "<group>"; };
-		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = ../cpputils/cpputils.xcodeproj; sourceTree = "<group>"; };
+		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
 		C9E910CC1A07C3C0005A1AF0 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -645,14 +635,6 @@
 			path = test;
 			sourceTree = "<group>";
 		};
-		C9A60E6919FBD79300C8297B /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				C9A60E6D19FBD79300C8297B /* cpputils */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -697,28 +679,12 @@
 			mainGroup = C96E75DD19F8F69B00148261;
 			productRefGroup = C96E75E719F8F69B00148261 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = C9A60E6919FBD79300C8297B /* Products */;
-					ProjectRef = C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				C96E75E519F8F69B00148261 /* ocmesh */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		C9A60E6D19FBD79300C8297B /* cpputils */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = cpputils;
-			remoteRef = C9A60E6C19FBD79300C8297B /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C96E75E219F8F69B00148261 /* Sources */ = {
