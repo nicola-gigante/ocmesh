@@ -34,10 +34,6 @@ constexpr uint8_t clog2(T v, uint8_t log = 0) {
     return v == 1 ? log : clog2(v / 2, log + 1);
 }
 
-inline constexpr uint64_t cpow2(uint8_t v) {
-    return v == 0 ? 1 : 2 * cpow2(v - 1);
-}
-
 class voxel
 {
 public:
@@ -46,25 +42,47 @@ public:
     static constexpr size_t level_bits    = clog2(precision) + 1;
     static constexpr size_t material_bits = 64 - location_bits - level_bits;
     
-    static constexpr size_t max_coordinate = cpow2(precision) - 1;
+    static constexpr size_t max_coordinate = (1 << precision) - 1;
     static constexpr size_t max_level      = precision;
-    static constexpr size_t max_material   = cpow2(material_bits) - 1;
+    static constexpr size_t max_material   = (1 << material_bits) - 1;
     
 public:
-    voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
-        : _code(pack(coordinates, level, material))
+    /*
+     * Constructors
+     */
+    
+    // The default constructor creates a void voxel, i.e. a voxels that lives in
+    // void space. Void voxels are not valid are removed by the tree or ignored.
+    voxel() = default;
+    
+    // Explicitly constructing a voxel from its encoding
+    explicit voxel(uint64_t code) : _code(code) { }
+    
+    // Piecewise construction with encoded coordinates.
+    voxel(uint64_t morton, uint8_t level, uint32_t material)
+        : _code(pack(morton, level, material))
     {
-        assert(coordinates.x < max_coordinate && "X coordinate out of range");
-        assert(coordinates.y < max_coordinate && "Y coordinate out of range");
-        assert(coordinates.z < max_coordinate && "Z coordinate out of range");
         assert(level    < max_level    && "Cubie level out of range");
         assert(material < max_material && "Material index out of range");
     }
     
+    // Piecewise construction with unpacked coordinates.
+    voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
+        : voxel(morton(coordinates), level, material)
+    {
+        assert(coordinates.x < max_coordinate && "X coordinate out of range");
+        assert(coordinates.y < max_coordinate && "Y coordinate out of range");
+        assert(coordinates.z < max_coordinate && "Z coordinate out of range");
+    }
+    
+    // Copy and assignment is trivial
     voxel           (voxel const&) = default;
     voxel &operator=(voxel const&) = default;
     
-    uint8_t level() {
+    /*
+     *
+     */
+    uint8_t level() const {
         return uint8_t((_code >> material_bits) & mask(level_bits));
     }
     
@@ -72,7 +90,7 @@ public:
         return uint32_t( _code & mask(material_bits) );
     }
     
-    uint64_t location() const {
+    uint64_t morton() const {
         return _code >> (material_bits + level_bits) & mask(location_bits);
     }
     
@@ -80,18 +98,55 @@ public:
     
     glm::u16vec3 coordinates() const { assert("Unimplemented"); return {}; }
     
+    /*
+     * Navigation functions
+     */
+    
+    // Statically obtain a root voxel.
+    static voxel root() {
+        return { { 0, 0, 0 }, max_level, 0 };
+    }
+    
+    // Get the children of the voxel, in Morton order.
+    // Note that the children inherit the material from the parent.
+    std::array<voxel, 8> children() const
+    {
+        assert(level() > 0 && "Can't subdivide a zero-level node");
+        
+        std::array<voxel, 8> results;
+        
+        // Decrement the level
+        uint64_t l = level() - 1;
+        // To get all the children is sufficient to increment the octal
+        // digit that corresponds to their level. In a well formed location
+        // code, the "don't care" digits are zero, so we can simply increment
+        // from the current value, without erasing anything first.
+        // Note also that the morton code of the first child (Front/Up/Left),
+        // is the same of the parent, the only difference being the level
+        // field.
+        uint64_t inc = 1 << (l * 3);
+
+        uint64_t m = morton();
+        for(voxel &v : results) {
+            v = voxel(m, l, material());
+            m += inc;
+        }
+        
+        return results;
+    }
+    
 private:
-    uint64_t _code;
+    uint64_t _code = 0;
     
     static constexpr uint64_t mask(uint8_t bits) {
         return bits == 0 ? 0 : uint64_t(-1) >> (64 - bits);
     }
     
-    static uint64_t pack(glm::u16vec3 coordinates,
+    static uint64_t pack(uint64_t morton,
                          uint8_t level, uint32_t material)
     {
-        return morton(coordinates) << (material_bits + level_bits) |
-               level               <<  material_bits               |
+        return morton << (material_bits + level_bits) |
+               level  <<  material_bits               |
                material;
     }
     

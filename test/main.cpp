@@ -15,6 +15,9 @@
  */
 
 #include <iostream>
+#include <utility>
+#include <cassert>
+#include <vector>
 
 #include "csg.h"
 #include "morton.h"
@@ -34,7 +37,7 @@ int main()
     assert(cube->distance({  21,  21,  21}) ==   0);
     assert(cube->distance({  22,  21,  21}) ==   1);
     
-    assert(voxel({5, 9, 1}, 0, 0).location() == 1095);
+    assert(voxel({5, 9, 1}, 0, 0).morton() == 1095);
     
     return 0;
 }
