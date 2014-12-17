@@ -23,147 +23,58 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-#include "static_table.h"
+#include <std14/utility>
 
 namespace ocmesh {
 namespace details {
-
-
-template<typename T, REQUIRES(std::is_integral<T>::value)>
-constexpr uint8_t clog2(T v, uint8_t log = 0) {
-    return v == 1 ? log : clog2(v / 2, log + 1);
-}
-
-class voxel
-{
-public:
-    static constexpr size_t precision     = 13;
-    static constexpr size_t location_bits = precision * 3;
-    static constexpr size_t level_bits    = clog2(precision) + 1;
-    static constexpr size_t material_bits = 64 - location_bits - level_bits;
-    
-    static constexpr size_t max_coordinate = (1 << precision) - 1;
-    static constexpr size_t max_level      = precision;
-    static constexpr size_t max_material   = (1 << material_bits) - 1;
-    
-public:
-    /*
-     * Constructors
-     */
-    
-    // The default constructor creates a void voxel, i.e. a voxels that lives in
-    // void space. Void voxels are not valid are removed by the tree or ignored.
-    voxel() = default;
-    
-    // Explicitly constructing a voxel from its encoding
-    explicit voxel(uint64_t code) : _code(code) { }
-    
-    // Piecewise construction with encoded coordinates.
-    voxel(uint64_t morton, uint8_t level, uint32_t material)
-        : _code(pack(morton, level, material))
-    {
-        assert(level    < max_level    && "Cubie level out of range");
-        assert(material < max_material && "Material index out of range");
-    }
-    
-    // Piecewise construction with unpacked coordinates.
-    voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
-        : voxel(morton(coordinates), level, material)
-    {
-        assert(coordinates.x < max_coordinate && "X coordinate out of range");
-        assert(coordinates.y < max_coordinate && "Y coordinate out of range");
-        assert(coordinates.z < max_coordinate && "Z coordinate out of range");
-    }
-    
-    // Copy and assignment is trivial
-    voxel           (voxel const&) = default;
-    voxel &operator=(voxel const&) = default;
-    
-    /*
-     *
-     */
-    uint8_t level() const {
-        return uint8_t((_code >> material_bits) & mask(level_bits));
-    }
-    
-    uint32_t material() const {
-        return uint32_t( _code & mask(material_bits) );
-    }
-    
-    uint64_t morton() const {
-        return _code >> (material_bits + level_bits) & mask(location_bits);
-    }
-    
-    uint64_t code() const { return _code; }
-    
-    glm::u16vec3 coordinates() const { assert("Unimplemented"); return {}; }
-    
-    /*
-     * Navigation functions
-     */
-    
-    // Statically obtain a root voxel.
-    static voxel root() {
-        return { { 0, 0, 0 }, max_level, 0 };
-    }
-    
-    // Get the children of the voxel, in Morton order.
-    // Note that the children inherit the material from the parent.
-    std::array<voxel, 8> children() const
-    {
-        assert(level() > 0 && "Can't subdivide a zero-level node");
-        
-        std::array<voxel, 8> results;
-        
-        // Decrement the level
-        uint64_t l = level() - 1;
-        // To get all the children is sufficient to increment the octal
-        // digit that corresponds to their level. In a well formed location
-        // code, the "don't care" digits are zero, so we can simply increment
-        // from the current value, without erasing anything first.
-        // Note also that the morton code of the first child (Front/Up/Left),
-        // is the same of the parent, the only difference being the level
-        // field.
-        uint64_t inc = 1 << (l * 3);
-
-        uint64_t m = morton();
-        for(voxel &v : results) {
-            v = voxel(m, l, material());
-            m += inc;
-        }
-        
-        return results;
-    }
-    
-private:
-    uint64_t _code = 0;
-    
-    static constexpr uint64_t mask(uint8_t bits) {
-        return bits == 0 ? 0 : uint64_t(-1) >> (64 - bits);
-    }
-    
-    static uint64_t pack(uint64_t morton,
-                         uint8_t level, uint32_t material)
-    {
-        return morton << (material_bits + level_bits) |
-               level  <<  material_bits               |
-               material;
-    }
-    
+   
     /*
      * Morton encoding calculation
      *
-     * The morton code is obtained by interleaving the bits of the
-     * x y z coordinates. This can be done with a constant number of
+     * Voxels in the linear octree are stored in a specific order, that is
+     * equivalent to a pre-order traversal of the tree, which spatially
+     * corresponds to a space-filling path that is often called Z-order or,
+     * recursively, Morton order.
+     *
+     * The morton code of a 3D coordinate vector is obtained by interleaving
+     * the bits of the coordinates, e.g. if the coordinates are:
+     *
+     * x = xxxx, y = yyyy, z = zzzz
+     *
+     * the Morton code is zyxzyxzyx
+     *
+     * Note that the relative order of each coordinate in the interleave is
+     * arbitrary, and corresponds to the spatial order that we want to follow.
+     *
+     * The order matters, as it has effects on the optimal order of traversal of
+     * the octree.
+     *
+     * This order is hardcoded once and for all in the 
+     * following enum declaration:
+     */
+    enum class coordinate_t : uint8_t {
+        x = 0,
+        y = 1,
+        z = 2
+    };
+    
+    
+    /* 
+     * The interleaving can be achieved with a constant number of
      * magic bitwise operations. The fastest implementation available is
      * based on the pre-computation of a table of bitmasks for 8 bit
      * values, that are composed to interleave our 16bits words.
+     *
+     * Note that this is faster than computing it on the fly
+     * only if we suppose that a lot of morton codes will be calculated in
+     * morton order, as to efficiently use the cache lines for the table data.
+     * This is the case in our code.
      *
      * Thanks to the C++11 constexpr keyword, we can tell the compiler
      * to precompute the table and statically put the results directly
      * as data into the executable.
      *
-     * The split() function is what computes the single elements
+     * The interleave() function is what computes the single elements
      * of the table. The code in the morton() function then uses the
      * facilities from static_table.h to fill the tables.
      *
@@ -172,89 +83,103 @@ private:
      * constexpr-enabled version of this code, which would be usable
      * as is with C++14 constexpr:
      *
-     *    constexpr uint32_t split(uint32_t x) {
-     *       x = (x | x << 16) & 0xff0000ff;
-     *       x = (x | x <<  8) & 0x0f00f00f;
-     *       x = (x | x <<  4) & 0xc30c30c3;
+     *    constexpr uint32_t interleave(uint8_t byte)
+     *    {
+     *       uint32_t x = byte;
+     *
+     *       x = (x | x << 16) & 0xFF0000FF;
+     *       x = (x | x <<  8) & 0x0F00F00F;
+     *       x = (x | x <<  4) & 0xC30C30C3;
      *       x = (x | x <<  2) & 0x49249249;
+     *
      *       return x;
      *    }
      *
      */
-    static constexpr uint32_t masks[] = {
+    constexpr uint32_t masks[] = {
         0,
-        0x49249249, 0xc30c30c3,
-        0x0f00f00f, 0xff0000ff
+        0x49249249, 0xC30C30C3,
+        0x0F00F00F, 0xFF0000FF
     };
-    
-    static constexpr uint32_t split(uint32_t x, int level) {
+
+    constexpr uint32_t interleave(uint32_t x, int level) {
         return level == 0 ? x :
-               split((x | x << (1 << level)) & masks[level], level - 1);
+            interleave((x | x << (1 << level)) & masks[level], level - 1);
+    }
+
+    constexpr uint32_t interleave(uint8_t x) {
+        return interleave(uint32_t(x), 4);
     }
     
-    static constexpr uint32_t split(uint32_t x) {
-        return split(x, 4);
-    }
-    
-    template<uint8_t S>
-    static constexpr uint32_t shiftl(uint32_t x) {
-        return x << S;
-    }
-    
-    static uint64_t morton(glm::u16vec3 coordinates)
+    /*
+     * This function computes the complete interleaving of a coordinate 
+     * component. The component is shifted according to the template argument.
+     */
+    template<coordinate_t S, size_t ...Idx>
+    uint64_t morton(uint32_t value, std14::index_sequence<Idx...>)
     {
-        static constexpr auto xmask = tbl::map<0, 256>(split);
-        static constexpr auto ymask = tbl::map(shiftl<1>, xmask);
-        static constexpr auto zmask = tbl::map(shiftl<2>, xmask);
+        static constexpr
+        uint32_t table[] = { interleave(uint8_t(Idx)) << uint8_t(S) ... };
         
-        struct unpack {
-            int low;
-            int high;
-            
-            unpack(uint16_t v) : low(v & 0xFF), high(v >> 8 & 0xFF) { }
-        } x = coordinates.x,
-          y = coordinates.y,
-          z = coordinates.z;
+        uint8_t low    = value       & 0xFF,
+                middle = value >> 8  & 0xFF,
+                high   = value >> 16 & 0xFF;
         
-        uint64_t   answer =
-                 ((zmask[z.high] | ymask[y.high] | xmask[x.high]) << 24) |
-                  (zmask[z.low]  | ymask[y.low]  | xmask[x.low]);
-        
-        return answer;
+        return uint64_t(table[high])   << 48 |
+               uint64_t(table[middle]) << 24 |
+               uint64_t(table[low]);
     }
-};
+    
+    template<coordinate_t S = coordinate_t::x>
+    uint64_t morton(uint32_t value) {
+        return morton<S>(value, std14::make_index_sequence<256>());
+    }
+    
+    /*
+     * Note that into a 64bit words, one can encode a 3D vector of 21 bits for
+     * each component. In the voxel class in voxel.h, coordinate components
+     * have a smaller width, for other reasons, but the code in this section
+     * is general and this function is independent of the choices
+     * made in voxel.h, so it packs all the 21 bits of each coordinate.
+     */
+    uint64_t morton(glm::u32vec3 coordinates)
+    {
+        return morton< coordinate_t::x >(coordinates.x) |
+               morton< coordinate_t::y >(coordinates.y) |
+               morton< coordinate_t::z >(coordinates.z);
+    }
 
-bool operator==(voxel const&v1, voxel const&v2) {
-    return v1.code() == v2.code();
-}
+    /*
+     * Unpacks one component of a morton encoded 3D vector.
+     */
+    template<coordinate_t S = coordinate_t::x>
+    uint32_t unmorton(uint64_t x)
+    {
+        x = x >> uint8_t(S); // Shift to select the component
+        
+        x =  x              & 0x9249249249249249;
+        x = (x | (x >>  2)) & 0x30C30C30C30C30C3;
+        x = (x | (x >>  4)) & 0xF00F00F00F00F00F;
+        x = (x | (x >>  8)) & 0x00FF0000FF0000FF;
+        x = (x | (x >> 16)) & 0xFFFF00000000FFFF;
+        x = (x | (x >> 32)) & 0x00000000FFFFFFFF;
+        
+        return uint32_t(x); // The result surely fits into 32 bits.
+    }
 
-bool operator!=(voxel const&v1, voxel const&v2) {
-    return v1.code() != v2.code();
-}
-
-bool operator<(voxel const&v1, voxel const&v2) {
-    return v1.code() < v2.code();
-}
-
-bool operator>(voxel const&v1, voxel const&v2) {
-    return v1.code() > v2.code();
-}
-
-bool operator<=(voxel const&v1, voxel const&v2) {
-    return v1.code() <= v2.code();
-}
-
-bool operator>=(voxel const&v1, voxel const&v2) {
-    return v1.code() >= v2.code();
-}
-
-static_assert(sizeof(voxel) == sizeof(uint64_t),
-              "Something wrong with the voxel bitfield. "
-              "Check the precision.");
+    /*
+     * Unpacks a morton encoded 3D coordinate vector
+     */
+    glm::u32vec3 unmorton(uint64_t m)
+    {
+        uint32_t x = unmorton< coordinate_t::x >(m),
+                 y = unmorton< coordinate_t::y >(m),
+                 z = unmorton< coordinate_t::z >(m);
+        
+        return { x, y, z };
+    }
 
 } // namespace details
-
-using details::voxel;
 
 } // namespace ocmesh
 

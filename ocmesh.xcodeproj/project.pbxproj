@@ -34,6 +34,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C92B71C01A41C64C00FDAC8E /* voxel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = voxel.h; sourceTree = "<group>"; };
 		C941E9AF19FD47E700ACEAF0 /* morton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = morton.h; sourceTree = "<group>"; };
 		C96E75E619F8F69B00148261 /* ocmesh */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ocmesh; sourceTree = BUILT_PRODUCTS_DIR; };
 		C96E75F519F8F9B700148261 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -632,6 +633,7 @@
 			isa = PBXGroup;
 			children = (
 				C941E9AF19FD47E700ACEAF0 /* morton.h */,
+				C92B71C01A41C64C00FDAC8E /* voxel.h */,
 				C96E76FC19F951CB00148261 /* csg.h */,
 			);
 			path = include;

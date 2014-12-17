@@ -18,9 +18,11 @@
 #include <utility>
 #include <cassert>
 #include <vector>
+#include <random>
+#include <limits>
 
 #include "csg.h"
-#include "morton.h"
+#include "voxel.h"
 
 using namespace ocmesh;
 
@@ -37,7 +39,18 @@ int main()
     assert(cube->distance({  21,  21,  21}) ==   0);
     assert(cube->distance({  22,  21,  21}) ==   1);
     
-    assert(voxel({5, 9, 1}, 0, 0).morton() == 1095);
+    std::random_device dev;
+    std::mt19937 gen(dev());
+    std::uniform_int_distribution<uint16_t> dist(0, voxel::max_coordinate);
+    
+    for(int i = 0; i < 1000; ++i) {
+        uint16_t x = dist(gen), y = dist(gen), z = dist(gen);
+        
+        glm::u16vec3 coordinates = {x, y, z};
+        glm::u16vec3 unpacked = voxel(coordinates, 0, 0).coordinates();
+    
+        assert(unpacked == coordinates);
+    }
     
     return 0;
 }
