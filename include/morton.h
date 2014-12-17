@@ -95,6 +95,17 @@ namespace details {
      *       return x;
      *    }
      *
+     *    template<coordinate_t Shift>
+     *    constexpr auto make_table() 
+     *    {
+     *       std::array<uint32_t, 256> table;
+     *
+     *       for(uint8_t i = 0; i <= 255; ++i)
+     *           table[i] = interleave(i) << uint8_t(Shift);
+     *
+     *       return table;
+     *    }
+     *
      */
     constexpr uint32_t masks[] = {
         0,
@@ -115,11 +126,11 @@ namespace details {
      * This function computes the complete interleaving of a coordinate 
      * component. The component is shifted according to the template argument.
      */
-    template<coordinate_t S, size_t ...Idx>
-    uint64_t morton(uint32_t value, std14::index_sequence<Idx...>)
+    template<coordinate_t Shift, size_t ...Idx>
+    uint64_t morton_impl(uint32_t value, std14::index_sequence<Idx...>)
     {
         static constexpr
-        uint32_t table[] = { interleave(uint8_t(Idx)) << uint8_t(S) ... };
+        uint32_t table[] = { interleave(uint8_t(Idx)) << uint8_t(Shift) ... };
         
         uint8_t low    = value       & 0xFF,
                 middle = value >> 8  & 0xFF,
@@ -130,19 +141,19 @@ namespace details {
                uint64_t(table[low]);
     }
     
-    template<coordinate_t S = coordinate_t::x>
+    template<coordinate_t Shift = coordinate_t::x>
     uint64_t morton(uint32_t value) {
-        return morton<S>(value, std14::make_index_sequence<256>());
+        return morton_impl<Shift>(value, std14::make_index_sequence<256>());
     }
     
     /*
-     * Note that into a 64bit words, one can encode a 3D vector of 21 bits for
+     * Note that into a 64bit word, one can encode a 3D vector of 21 bits for
      * each component. In the voxel class in voxel.h, coordinate components
      * have a smaller width, for other reasons, but the code in this section
      * is general and this function is independent of the choices
      * made in voxel.h, so it packs all the 21 bits of each coordinate.
      */
-    uint64_t morton(glm::u32vec3 coordinates)
+    inline uint64_t morton(glm::u32vec3 coordinates)
     {
         return morton< coordinate_t::x >(coordinates.x) |
                morton< coordinate_t::y >(coordinates.y) |
@@ -170,7 +181,7 @@ namespace details {
     /*
      * Unpacks a morton encoded 3D coordinate vector
      */
-    glm::u32vec3 unmorton(uint64_t m)
+    inline glm::u32vec3 unmorton(uint64_t m)
     {
         uint32_t x = unmorton< coordinate_t::x >(m),
                  y = unmorton< coordinate_t::y >(m),
@@ -181,6 +192,9 @@ namespace details {
 
 } // namespace details
 
+using details::morton;
+using details::unmorton;
+    
 } // namespace ocmesh
 
 

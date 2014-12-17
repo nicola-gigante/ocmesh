@@ -97,13 +97,18 @@ public:
     }
     
     uint64_t morton() const {
-        return _code >> (material_bits + level_bits) & mask(location_bits);
+        return (_code >> (material_bits + level_bits)) & mask(location_bits);
     }
     
     uint64_t code() const { return _code; }
     
     glm::u16vec3 coordinates() const {
         return glm::u16vec3(unmorton(morton()));
+    }
+    
+    // The size of the voxel expressed in base units
+    size_t size() const {
+        return 1 << level();
     }
     
     /*
@@ -152,13 +157,8 @@ std::array<voxel, 8> voxel::children() const
     
     // Decrement the level
     uint64_t l = level() - 1;
-    // To get all the children is sufficient to increment the octal
-    // digit that corresponds to their level. In a well formed location
-    // code, the "don't care" digits are zero, so we can simply increment
-    // from the current value, without erasing anything first.
-    // Note also that the morton code of the first child (Front/Up/Left),
-    // is the same of the parent, the only difference being the level
-    // field.
+
+    // Increment for each child
     uint64_t inc = 1 << (l * 3);
     
     uint64_t m = morton();
