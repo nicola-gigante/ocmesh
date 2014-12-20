@@ -1,0 +1,246 @@
+// -*- C++ -*-
+//===---------------------------- array -----------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef CPPUTILS_ARRAY_H
+#define CPPUTILS_ARRAY_H
+
+#include <std14/type_traits>
+#include <std14/utility>
+#include <iterator>
+#include <algorithm>
+#include <stdexcept>
+#include <cassert>
+
+#if cplusplus > 201103
+namespace std14 = std;
+#else
+
+namespace std14 {
+    
+using namespace std;
+
+namespace details {
+    
+    template <class T>
+    struct swappable
+    {
+        struct nat { };
+        
+        static nat swap(...);
+        
+        typedef decltype(swap(declval<T&>(), declval<T&>())) type;
+        static const bool value = !is_same<type, nat>::value;
+    };
+    
+    template <class T>
+    struct is_swappable
+        : public integral_constant<bool, swappable<T>::value> { };
+    
+    template <bool, class T>
+    struct is_nothrow_swappable_imp
+        : public integral_constant<bool, noexcept(swap(declval<T&>(),
+                                                       declval<T&>()))> { };
+    
+    template <class T>
+    struct is_nothrow_swappable_imp<false, T> : public false_type { };
+    
+    template <class T>
+    struct is_nothrow_swappable
+        : public is_nothrow_swappable_imp<is_swappable<T>::value, T> { };
+    
+}
+    
+template <class T, size_t Size>
+struct array
+{
+    // types:
+    typedef array                                 self;
+    typedef T                                     value_type;
+    typedef value_type&                           reference;
+    typedef const value_type&                     const_reference;
+    typedef value_type*                           iterator;
+    typedef const value_type*                     const_iterator;
+    typedef value_type*                           pointer;
+    typedef const value_type*                     const_pointer;
+    typedef size_t                                size_type;
+    typedef ptrdiff_t                             difference_type;
+    typedef std::reverse_iterator<iterator>       reverse_iterator;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+
+    value_type elems_[Size > 0 ? Size : 1];
+
+    // No explicit construct/copy/destroy for aggregate type
+    void fill(const value_type& u)
+        {std::fill_n(elems_, Size, u);}
+    
+    void swap(array& a) noexcept(noexcept(details::is_nothrow_swappable<T>::value))
+        { std::swap_ranges(elems_, elems_ + Size, a.elems_);}
+
+    // iterators:
+    
+    iterator begin() noexcept {return iterator(elems_);}
+    
+    const_iterator begin() const noexcept {return const_iterator(elems_);}
+    
+    iterator end() noexcept {return iterator(elems_ + Size);}
+    
+    const_iterator end() const noexcept {return const_iterator(elems_ + Size);}
+
+    
+    reverse_iterator rbegin() noexcept {return reverse_iterator(end());}
+    
+    const_reverse_iterator rbegin() const noexcept {return const_reverse_iterator(end());}
+    
+    reverse_iterator rend() noexcept {return reverse_iterator(begin());}
+    
+    const_reverse_iterator rend() const noexcept {return const_reverse_iterator(begin());}
+
+    
+    const_iterator cbegin() const noexcept {return begin();}
+    
+    const_iterator cend() const noexcept {return end();}
+    
+    const_reverse_iterator crbegin() const noexcept {return rbegin();}
+    
+    const_reverse_iterator crend() const noexcept {return rend();}
+
+    // capacity:
+    
+    constexpr size_type size() const noexcept {return Size;}
+    
+    constexpr size_type maxSize() const noexcept {return Size;}
+    
+    constexpr bool empty() const noexcept {return Size == 0;}
+
+    // element access:
+    reference operator[](size_type n)             {return elems_[n];}
+    constexpr const_reference operator[](size_type n) const {return elems_[n];}
+    reference at(size_type n);
+    constexpr const_reference at(size_type n) const;
+
+    reference front()             {return elems_[0];}
+    constexpr const_reference front() const {return elems_[0];}
+    reference back()              {return elems_[Size > 0 ? Size-1 : 0];}
+    constexpr const_reference back() const  {return elems_[Size > 0 ? Size-1 : 0];}
+
+    
+    value_type* data() noexcept {return elems_;}
+    
+    const value_type* data() const noexcept {return elems_;}
+};
+
+template <class T, size_t Size>
+typename array<T, Size>::reference
+array<T, Size>::at(size_type n)
+{
+    return n >= Size ? throw std::out_of_range("array::at()")
+                     : elems_[n];
+}
+
+template <class T, size_t Size>
+constexpr
+typename array<T, Size>::const_reference
+array<T, Size>::at(size_type n) const
+{
+    return n >= Size ? throw std::out_of_range("array::at()")
+                     : elems_[n];
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator==(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return std::equal(x.elems_, x.elems_ + Size, y.elems_);
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator!=(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return !(x == y);
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator<(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return std::lexicographical_compare(x.elems_, x.elems_ + Size, y.elems_, y.elems_ + Size);
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator>(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return y < x;
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator<=(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return !(y < x);
+}
+
+template <class T, size_t Size>
+inline 
+bool
+operator>=(const array<T, Size>& x, const array<T, Size>& y)
+{
+    return !(x < y);
+}
+
+template <class T, size_t Size>
+inline 
+typename enable_if
+<
+    details::is_swappable<T>::value,
+    void
+>::type
+swap(const array<T, Size>& x, const array<T, Size>& y)
+    noexcept(details::is_nothrow_swappable<T>::value)
+{
+    x.swap(y);
+}
+
+template <size_t _Ip, class T, size_t Size>
+inline  constexpr
+T&
+get(array<T, Size>& a) noexcept
+{
+    static_assert(_Ip < Size, "Index out of bounds in std::get<> (std::array)");
+    return a.elems_[_Ip];
+}
+
+template <size_t _Ip, class T, size_t Size>
+inline  constexpr
+const T&
+get(const array<T, Size>& a) noexcept
+{
+    static_assert(_Ip < Size, "Index out of bounds in std::get<> (const std::array)");
+    return a.elems_[_Ip];
+}
+
+template <size_t _Ip, class T, size_t Size>
+inline  constexpr
+T&&
+get(array<T, Size>&& a) noexcept
+{
+    static_assert(_Ip < Size, "Index out of bounds in std::get<> (std::array &&)");
+    return std::move(a.elems_[_Ip]);
+}
+
+}
+#endif
+#endif

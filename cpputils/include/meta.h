@@ -27,9 +27,9 @@
 
 // Note: this must stay on the same line.
 #define REQUIRES(...) \
-typename CPPUTILS_REQUIRES_FRESH = void, typename std::enable_if<::meta::details::true_t<CPPUTILS_REQUIRES_FRESH>::value && (__VA_ARGS__), int>::type = 0
+typename CPPUTILS_REQUIRES_FRESH = void, typename std::enable_if<::utils::details::true_t<CPPUTILS_REQUIRES_FRESH>::value && (__VA_ARGS__), int>::type = 0
 
-namespace meta {
+namespace utils {
     
     namespace details
     {
