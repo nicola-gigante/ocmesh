@@ -18,9 +18,7 @@
 #define OCMESH_CSG_H__
 
 #include "meta.h"
-
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
+#include "glm.h"
 
 #include <std14/memory>
 #include <iterator>
@@ -49,8 +47,6 @@ namespace ocmesh {
             
             Scene& operator=(Scene const&) = default;
             Scene& operator=(Scene     &&) = default;
-            
-            
             
         private:
             std::vector<ptr> _objects;
@@ -87,6 +83,7 @@ namespace ocmesh {
         public:
             binary_operation_t(ptr left, ptr right)
                 : _left(std::move(left)), _right(std::move(right)) { }
+            virtual ~binary_operation_t();
             
             CSG *left()  const { return _left.get();  }
             CSG *right() const { return _right.get(); }

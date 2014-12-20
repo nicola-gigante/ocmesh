@@ -294,6 +294,7 @@
 		C96E76FF19F951E800148261 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C96E770119F951FB00148261 /* csg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg.cpp; sourceTree = "<group>"; };
 		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
+		C9AD92861A45941C00736AF9 /* glm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glm.h; sourceTree = "<group>"; };
 		C9E910CC1A07C3C0005A1AF0 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -635,6 +636,7 @@
 				C941E9AF19FD47E700ACEAF0 /* morton.h */,
 				C92B71C01A41C64C00FDAC8E /* voxel.h */,
 				C96E76FC19F951CB00148261 /* csg.h */,
+				C9AD92861A45941C00736AF9 /* glm.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -783,6 +785,13 @@
 				);
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "";
+				WARNING_CFLAGS = (
+					"-Weverything",
+					"-Wno-c++98-compat",
+					"-Wno-c++98-compat-pedantic",
+					"-Wno-padded",
+					"-Wno-float-equal",
+				);
 			};
 			name = Debug;
 		};
@@ -833,6 +842,13 @@
 				);
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "";
+				WARNING_CFLAGS = (
+					"-Weverything",
+					"-Wno-c++98-compat",
+					"-Wno-c++98-compat-pedantic",
+					"-Wno-padded",
+					"-Wno-float-equal",
+				);
 			};
 			name = Release;
 		};

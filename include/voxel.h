@@ -19,6 +19,8 @@
 #define OCMESH_VOXEL_H__
 
 #include <array>
+#include <cmath>
+#include <ostream>
 
 #include "morton.h"
 
@@ -92,6 +94,10 @@ public:
         return uint8_t((_code >> material_bits) & mask(level_bits));
     }
     
+    uint8_t height() const {
+        return max_level - level();
+    }
+    
     uint32_t material() const {
         return uint32_t( _code & mask(material_bits) );
     }
@@ -106,9 +112,9 @@ public:
         return glm::u16vec3(unmorton(morton()));
     }
     
-    // The size of the voxel expressed in base units
-    size_t size() const {
-        return 1 << level();
+    // The size of the voxel edge expressed in base units
+    uint16_t size() const {
+        return 1 << height();
     }
     
     /*
@@ -123,14 +129,20 @@ public:
     /*
      * Get the children of the voxel, in Morton order.
      * Note that the children inherit the material from the parent.
-     * Note also that the morton code of the first child (Front/Up/Left),
+     * Note also that the morton code of the first child (Left/Bottom/Back),
      * is the same of the parent, the only difference being the level field.
      */
     std::array<voxel, 8> children() const;
     
+    enum direction : uint8_t;
+    
+    /*
+     * Get a neighbor of the same size of the voxel at the given direction.
+     */
+    voxel neighbor(direction d) const;
+    
 private:
-    static uint64_t pack(uint64_t morton,
-                         uint8_t level, uint32_t material)
+    static uint64_t pack(uint64_t morton, uint8_t level, uint32_t material)
     {
         return morton << (material_bits + level_bits) |
                level  <<  material_bits               |
@@ -170,6 +182,54 @@ std::array<voxel, 8> voxel::children() const
     return results;
 }
 
+constexpr uint8_t mk_direction(uint8_t index, bool add_size) {
+    return index << 1 | add_size;
+}
+ 
+enum voxel::direction : uint8_t
+{
+    left  = mk_direction(0, false),
+    right = mk_direction(0, true ),
+    down  = mk_direction(1, false),
+    up    = mk_direction(1, true ),
+    back  = mk_direction(2, false),
+    front = mk_direction(2, true )
+};
+    
+constexpr bool add_is_safe(uint16_t x, uint16_t y) {
+    return x <= std::numeric_limits<uint16_t>::max() - y;
+}
+
+inline
+voxel voxel::neighbor(direction d) const
+{
+    bool add_size = uint8_t(d) & 1;
+    uint8_t index = uint8_t(d) >> 1;
+    
+    glm::u16vec3 coordinates = this->coordinates();
+    
+    // We add the size if add_size is true,
+    // or we add -1 if add_size is false
+    if(add_size && add_is_safe(coordinates[index], size()))
+        coordinates[index] += size();
+    else if(!add_size && coordinates[index] > 0)
+        coordinates[index] -= 1;
+    else
+        return voxel(); // Neighbor does not exist
+    
+    return voxel(coordinates, level(), material());
+}
+
+std::ostream &operator<<(std::ostream &s, voxel v) {
+    s << "{ " << v.coordinates().x << ", "
+              << v.coordinates().y << ", "
+              << v.coordinates().z << " }"
+      << " - level: "    << unsigned(v.level())
+      << " - size: "     << v.size()
+      << " - material: " << v.material();
+    return s;
+}
+    
 bool operator==(voxel const&v1, voxel const&v2) {
     return v1.code() == v2.code();
 }

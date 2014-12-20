@@ -26,6 +26,7 @@
 
 using namespace ocmesh;
 
+
 int main()
 {
     csg::ptr sphere = csg::sphere(42);
@@ -52,5 +53,14 @@ int main()
         assert(unpacked == coordinates);
     }
     
+    voxel v({42,42,42}, 12, 0);
+    
+    std::cout << "original: " << v                        << "\n\n";
+    std::cout << "left:     " << v.neighbor(voxel::left)  << "\n";
+    std::cout << "right:    " << v.neighbor(voxel::right) << "\n\n";
+    std::cout << "up:       " << v.neighbor(voxel::up)    << "\n";
+    std::cout << "down:     " << v.neighbor(voxel::down)  << "\n\n";
+    std::cout << "back:     " << v.neighbor(voxel::back)  << "\n";
+    std::cout << "front:    " << v.neighbor(voxel::front) << "\n";
     return 0;
 }
