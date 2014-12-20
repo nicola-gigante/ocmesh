@@ -134,12 +134,33 @@ public:
      */
     std::array<voxel, 8> children() const;
     
-    enum direction : uint8_t;
+    /*
+     * Enumeration of possible directions of the neighbors of a voxel.
+     */
+    enum direction : uint8_t
+    {
+        left,
+        right,
+        down,
+        up,
+        back,
+        front
+    };
     
     /*
-     * Get a neighbor of the same size of the voxel at the given direction.
+     * Get a voxel represeting the neighbor of the voxel at the given direction,
+     * and with the same size.
+     *
+     * Note that this voxel might not actually exist in the octree, but it's
+     * needed to find the actual neighbor by searching for its immediate 
+     * ancestor in the octree.
      */
     voxel neighbor(direction d) const;
+    
+    /*
+     * Get all neighbors of the voxel
+     */
+    std::array<voxel, 6> neighborhood() const;
     
 private:
     static uint64_t pack(uint64_t morton, uint8_t level, uint32_t material)
@@ -182,29 +203,40 @@ std::array<voxel, 8> voxel::children() const
     return results;
 }
 
-constexpr uint8_t mk_direction(uint8_t index, bool add_size) {
-    return index << 1 | add_size;
-}
- 
-enum voxel::direction : uint8_t
-{
-    left  = mk_direction(0, false),
-    right = mk_direction(0, true ),
-    down  = mk_direction(1, false),
-    up    = mk_direction(1, true ),
-    back  = mk_direction(2, false),
-    front = mk_direction(2, true )
-};
-    
 constexpr bool add_is_safe(uint16_t x, uint16_t y) {
     return x <= std::numeric_limits<uint16_t>::max() - y;
 }
 
+/*
+ * neighbor() member function implementation.
+ *
+ * Depending on the direction we have to do different things.
+ *
+ * The coordinate of the voxel represents the Left/Bottom/Back corner of the
+ * cubie. This means that to go in the left, down and back directions we only
+ * need to subtract one from the corresponding coordinate to reach a point
+ * that for sure belongs to the neighbor.
+ *
+ * Instead, for the right, up and front direction we have to jump over the
+ * entire voxel, so we add the size of the voxel itself.
+ *
+ * All this have to take into account the case when the needed neighbor does
+ * not exist at all. This case manifests itself as a possible overflow or
+ * underflow in the operations outlined above, and it happens when we're trying
+ * to find the neighbor of a voxel that is at the extreme edge of the space,
+ * so that the neighbor in this particular direction would fall of the border.
+ *
+ * In this case the function returns a void voxel.
+ */
 inline
 voxel voxel::neighbor(direction d) const
 {
-    bool add_size = uint8_t(d) & 1;
-    uint8_t index = uint8_t(d) >> 1;
+    bool add_size = d == right ||
+                    d == up    ||
+                    d == front;
+    
+    uint8_t index = d == left || d == right ? 0 :
+                    d == up   || d == down  ? 1 : 2 ;
     
     glm::u16vec3 coordinates = this->coordinates();
     
@@ -219,7 +251,22 @@ voxel voxel::neighbor(direction d) const
     
     return voxel(coordinates, level(), material());
 }
+    
+inline
+std::array<voxel, 6> voxel::neighborhood() const {
+    return {
+        neighbor(left ),
+        neighbor(right),
+        neighbor(down ),
+        neighbor(up   ),
+        neighbor(back ),
+        neighbor(front),
+    };
+}
 
+/*
+ * Miscellaneous operators for convenient use of voxels.
+ */
 std::ostream &operator<<(std::ostream &s, voxel v) {
     s << "{ " << v.coordinates().x << ", "
               << v.coordinates().y << ", "
@@ -230,27 +277,27 @@ std::ostream &operator<<(std::ostream &s, voxel v) {
     return s;
 }
     
-bool operator==(voxel const&v1, voxel const&v2) {
+bool operator==(voxel v1, voxel v2) {
     return v1.code() == v2.code();
 }
 
-bool operator!=(voxel const&v1, voxel const&v2) {
+bool operator!=(voxel v1, voxel v2) {
     return v1.code() != v2.code();
 }
 
-bool operator<(voxel const&v1, voxel const&v2) {
+bool operator<(voxel v1, voxel v2) {
     return v1.code() < v2.code();
 }
 
-bool operator>(voxel const&v1, voxel const&v2) {
+bool operator>(voxel v1, voxel v2) {
     return v1.code() > v2.code();
 }
 
-bool operator<=(voxel const&v1, voxel const&v2) {
+bool operator<=(voxel v1, voxel v2) {
     return v1.code() <= v2.code();
 }
 
-bool operator>=(voxel const&v1, voxel const&v2) {
+bool operator>=(voxel v1, voxel v2) {
     return v1.code() >= v2.code();
 }
     

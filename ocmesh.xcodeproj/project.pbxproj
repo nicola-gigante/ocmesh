@@ -295,7 +295,7 @@
 		C96E770119F951FB00148261 /* csg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg.cpp; sourceTree = "<group>"; };
 		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
 		C9AD92861A45941C00736AF9 /* glm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glm.h; sourceTree = "<group>"; };
-		C9E910CC1A07C3C0005A1AF0 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
+		C9E910CC1A07C3C0005A1AF0 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -314,7 +314,7 @@
 			children = (
 				C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */,
 				C96E75F519F8F9B700148261 /* README.md */,
-				C9E910CC1A07C3C0005A1AF0 /* TODO.md */,
+				C9E910CC1A07C3C0005A1AF0 /* NOTES.md */,
 				C96E75F819F8FF7E00148261 /* glm */,
 				C96E76FB19F951CB00148261 /* include */,
 				C96E75F019F8F6DD00148261 /* src */,

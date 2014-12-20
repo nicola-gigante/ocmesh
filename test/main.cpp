@@ -62,5 +62,6 @@ int main()
     std::cout << "down:     " << v.neighbor(voxel::down)  << "\n\n";
     std::cout << "back:     " << v.neighbor(voxel::back)  << "\n";
     std::cout << "front:    " << v.neighbor(voxel::front) << "\n";
+    
     return 0;
 }
