@@ -51,27 +51,29 @@ feature would be surely a win, thanks to the relaxed rules of the new
 standard. Below is a sketch of the C++14 code that would be required to
 use a pre-computed table.
 
-    constexpr uint32_t interleave(uint8_t byte)
-    {
-        uint32_t x = byte;
+```cpp
+constexpr uint32_t interleave(uint8_t byte)
+{
+  uint32_t x = byte;
 
-        x = (x | x << 16) & 0xFF0000FF;
-        x = (x | x <<  8) & 0x0F00F00F;
-        x = (x | x <<  4) & 0xC30C30C3;
-        x = (x | x <<  2) & 0x49249249;
+  x = (x | x << 16) & 0xFF0000FF;
+  x = (x | x <<  8) & 0x0F00F00F;
+  x = (x | x <<  4) & 0xC30C30C3;
+  x = (x | x <<  2) & 0x49249249;
 
-        return x;
-    }
+  return x;
+}
 
-    constexpr auto make_table(coordinate_t coord)
-    {
-        std::array<uint32_t, 256> table;
+constexpr auto make_table(coordinate_t coord)
+{
+  std::array<uint32_t, 256> table;
 
-        for(uint8_t i = 0; i <= 255; ++i)
-            table[i] = interleave(i) << uint8_t(coord);
+  for(uint8_t i = 0; i <= 255; ++i)
+    table[i] = interleave(i) << uint8_t(coord);
 
-        return table;
-    }
+  return table;
+}
+```
 
 ### Managing the tree
 The linear octree is an array of ordered location codes. Managing the tree
