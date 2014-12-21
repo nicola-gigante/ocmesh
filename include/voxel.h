@@ -203,6 +203,7 @@ std::array<voxel, 8> voxel::children() const
     return results;
 }
 
+// Check if we can add x and y without overflow
 constexpr bool add_is_safe(uint16_t x, uint16_t y) {
     return x <= std::numeric_limits<uint16_t>::max() - y;
 }
@@ -231,25 +232,39 @@ constexpr bool add_is_safe(uint16_t x, uint16_t y) {
 inline
 voxel voxel::neighbor(direction d) const
 {
+    /*
+     * This will maybe be the most frequently called function in the entire
+     * application, so we have to increase a bit its complexity to avoid
+     * branches. Everything is computed in one linear flow control.
+     */
+    // First we choose if we need to add the size or subtract 1
     bool add_size = d == right ||
                     d == up    ||
                     d == front;
     
+    // Select the index of the coordinate to change.
+    // Note: these ternary operators are probably not compiled as branches
+    // TODO: Check the above statement
     uint8_t index = d == left || d == right ? 0 :
                     d == up   || d == down  ? 1 : 2 ;
     
+    // Get the coordinates of the voxel
     glm::u16vec3 coordinates = this->coordinates();
     
-    // We add the size if add_size is true,
-    // or we add -1 if add_size is false
-    if(add_size && add_is_safe(coordinates[index], size()))
-        coordinates[index] += size();
-    else if(!add_size && coordinates[index] > 0)
-        coordinates[index] -= 1;
-    else
-        return voxel(); // Neighbor does not exist
+    // Check if we have a neighbor at all
+    uint16_t has_neighbor =
+        (add_size && add_is_safe(coordinates[index], size())) ||
+        (!add_size && coordinates[index] > 0);
     
-    return voxel(coordinates, level(), material());
+    // We add the size if add_size is true,
+    // or we add -1 if add_size is false,
+    // but only if the neighbor actually exists
+    coordinates[index] += has_neighbor * (add_size * size() - (!add_size));
+
+    // Build the new voxel. If has_neighbor is false we obtain a void voxel.
+    return voxel(has_neighbor * coordinates,
+                 has_neighbor * level(),
+                 has_neighbor * material());
 }
     
 inline
