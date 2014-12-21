@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		C96E770019F951E800148261 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E76FF19F951E800148261 /* main.cpp */; };
 		C96E770219F951FB00148261 /* csg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E770119F951FB00148261 /* csg.cpp */; };
+		C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9EAC3931A474BC2001CB704 /* octree.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -296,6 +297,8 @@
 		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
 		C9AD92861A45941C00736AF9 /* glm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glm.h; sourceTree = "<group>"; };
 		C9E910CC1A07C3C0005A1AF0 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
+		C9EAC3911A4725B5001CB704 /* octree.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = octree.h; sourceTree = "<group>"; };
+		C9EAC3931A474BC2001CB704 /* octree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = octree.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -335,6 +338,7 @@
 			isa = PBXGroup;
 			children = (
 				C96E770119F951FB00148261 /* csg.cpp */,
+				C9EAC3931A474BC2001CB704 /* octree.cpp */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -637,6 +641,7 @@
 				C92B71C01A41C64C00FDAC8E /* voxel.h */,
 				C96E76FC19F951CB00148261 /* csg.h */,
 				C9AD92861A45941C00736AF9 /* glm.h */,
+				C9EAC3911A4725B5001CB704 /* octree.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -730,6 +735,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C96E770019F951E800148261 /* main.cpp in Sources */,
+				C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */,
 				C96E770219F951FB00148261 /* csg.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

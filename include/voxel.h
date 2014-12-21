@@ -22,6 +22,7 @@
 #include <cmath>
 #include <ostream>
 
+#include "meta.h"
 #include "morton.h"
 
 namespace ocmesh {
@@ -282,6 +283,7 @@ std::array<voxel, 6> voxel::neighborhood() const {
 /*
  * Miscellaneous operators for convenient use of voxels.
  */
+inline
 std::ostream &operator<<(std::ostream &s, voxel v) {
     s << "{ " << v.coordinates().x << ", "
               << v.coordinates().y << ", "
@@ -291,27 +293,33 @@ std::ostream &operator<<(std::ostream &s, voxel v) {
       << " - material: " << v.material();
     return s;
 }
-    
+
+inline
 bool operator==(voxel v1, voxel v2) {
     return v1.code() == v2.code();
 }
 
+inline
 bool operator!=(voxel v1, voxel v2) {
     return v1.code() != v2.code();
 }
 
+inline
 bool operator<(voxel v1, voxel v2) {
     return v1.code() < v2.code();
 }
 
+inline
 bool operator>(voxel v1, voxel v2) {
     return v1.code() > v2.code();
 }
 
+inline
 bool operator<=(voxel v1, voxel v2) {
     return v1.code() <= v2.code();
 }
 
+inline
 bool operator>=(voxel v1, voxel v2) {
     return v1.code() >= v2.code();
 }

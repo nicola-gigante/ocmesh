@@ -93,6 +93,7 @@ namespace details {
     /*
      * Unpacks one component of a morton encoded 3D vector.
      */
+    inline
     uint32_t unmorton(uint64_t x, coordinate_t coord)
     {
         x = x >> uint8_t(coord); // Shift to select the component
@@ -112,7 +113,8 @@ namespace details {
      * This function interleaves all the three components and packs them 
      * together.
      */
-    inline uint64_t morton(glm::u32vec3 coordinates)
+    inline
+    uint64_t morton(glm::u32vec3 coordinates)
     {
         return morton(coordinates.x, coordinate_t::x) |
                morton(coordinates.y, coordinate_t::y) |
@@ -122,7 +124,8 @@ namespace details {
     /*
      * Unpacks a morton encoded 3D coordinate vector
      */
-    inline glm::u32vec3 unmorton(uint64_t m)
+    inline
+    glm::u32vec3 unmorton(uint64_t m)
     {
         uint32_t x = unmorton(m, coordinate_t::x),
                  y = unmorton(m, coordinate_t::y),

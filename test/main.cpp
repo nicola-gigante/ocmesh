@@ -22,7 +22,7 @@
 #include <limits>
 
 #include "csg.h"
-#include "voxel.h"
+#include "octree.h"
 
 using namespace ocmesh;
 
