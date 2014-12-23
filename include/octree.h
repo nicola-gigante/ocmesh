@@ -18,6 +18,7 @@
 #define OCMESH_OCTREE_H__
 
 #include "voxel.h"
+#include "glm.h"
 
 #include <deque>
 
@@ -42,11 +43,19 @@ public:
     
 public:
     octree() = default;
+    octree(glm::f32mat4 transform) : _transform(transform) { }
     octree(octree const&) = default;
     octree(octree     &&) = default;
     
     octree &operator=(octree const&) = default;
     octree &operator=(octree     &&) = default;
+    
+    /*
+     * Returns the transform used to determine size and position of the octree
+     * in the 3D space.
+     */
+    glm::f32mat4  transform() const { return _transform; }
+    glm::f32mat4 &transform()       { return _transform; }
     
     /*
      * We expose the voxels in their natural order
@@ -58,12 +67,45 @@ public:
     iterator        end()         { return _data.end();    }
     const_iterator  end()   const { return _data.end();    }
     const_iterator cend()   const { return _data.cend();   }
-        
-    // Find neighbor of a node in a given direction
-    const_iterator neighbor(iterator node, voxel::direction d) const;
+    
+    /*
+     * Returns the number of voxels currently represented in the octree
+     */
+    size_t size() const { return _data.size();  }
+    
+    /*
+     * Returns true if the octree is empty
+     */
+    bool empty() const { return _data.empty(); }
+    
+    /*
+     * Finds neighbor of a node in a given direction
+     */
+    iterator       neighbor(const_iterator node, voxel::direction d);
+    const_iterator neighbor(const_iterator node, voxel::direction d) const;
+    
+    /*
+     * This is the main function to recursively build an octree with a given
+     * splitting rule. The octree is built in a breadth-first way, by applying
+     * the predicate to each voxel to determine if it has to be split.
+     *
+     * The argument must be a function that given a voxel will return its
+     * material. If the function returns voxel::unknown_material, the voxel
+     * will be splitted and its children recursively examinated.
+     *
+     * Otherwise, if the function returns voxel::void_material or any material
+     * value, then the material will be set to the voxel and the voxel will 
+     * be definitely added to the octree.
+     *
+     * Note: during the execution of this function, the octree is in an
+     * inconsistent state. This means that the testing function should only
+     * use the given voxel and avoid to use the octree in any other way.
+     */
+    void build(std::function<voxel::material_t(voxel)> split_function);
     
 private:
-    container_t _data = { voxel{} };
+    container_t  _data;
+    glm::f32mat4 _transform; // default-constructed as the identity matrix
 };
     
 

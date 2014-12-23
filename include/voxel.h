@@ -36,8 +36,12 @@ constexpr uint8_t clog2(T v, uint8_t log = 0) {
     return v == 1 ? log : clog2(v / 2, log + 1);
 }
     
-constexpr uint64_t mask(uint8_t bits) {
+constexpr uint64_t lowmask(uint8_t bits) {
     return bits == 0 ? 0 : uint64_t(-1) >> (64 - bits);
+}
+
+constexpr uint64_t highmask(uint8_t bits) {
+    return bits == 0 ? 0 : uint64_t(-1) << (64 - bits);
 }
     
 class voxel
@@ -46,6 +50,11 @@ class voxel
     uint64_t _code = 0;
     
 public:
+    using level_t    = uint8_t;
+    using material_t = uint32_t;
+    
+    static constexpr material_t unknown_material = 0;
+    
     static constexpr size_t precision     = 13;
     static constexpr size_t location_bits = precision * 3;
     static constexpr size_t level_bits    = clog2(precision) + 1;
@@ -59,16 +68,13 @@ public:
     /*
      * Constructors
      */
-    
-    // The default constructor creates a void voxel, i.e. a voxels that lives in
-    // void space. Void voxels are not valid are removed by the tree or ignored.
     voxel() = default;
     
     // Explicitly constructing a voxel from its encoding
     explicit voxel(uint64_t code) : _code(code) { }
     
     // Piecewise construction with encoded coordinates.
-    voxel(uint64_t morton, uint8_t level, uint32_t material)
+    voxel(uint64_t morton, uint8_t level, material_t material)
         : _code(pack(morton, level, material))
     {
         assert(level    <= max_level    && "Cubie level out of range");
@@ -76,8 +82,8 @@ public:
     }
     
     // Piecewise construction with unpacked coordinates.
-    voxel(glm::u16vec3 coordinates, uint8_t level, uint32_t material)
-    : voxel(details::morton(glm::u32vec3(coordinates)), level, material)
+    voxel(glm::u16vec3 coordinates, uint8_t level = 0, uint32_t material = 0)
+        : voxel(details::morton(glm::u32vec3(coordinates)), level, material)
     {
         assert(coordinates.x <= max_coordinate && "X coordinate out of range");
         assert(coordinates.y <= max_coordinate && "Y coordinate out of range");
@@ -92,25 +98,47 @@ public:
      * Functions to obtain the various components of voxel data
      */
     uint8_t level() const {
-        return uint8_t((_code >> material_bits) & mask(level_bits));
+        return uint8_t((_code >> material_bits) & lowmask(level_bits));
     }
     
     uint8_t height() const {
         return max_level - level();
     }
     
-    uint32_t material() const {
-        return uint32_t( _code & mask(material_bits) );
+    material_t material() const {
+        return material_t( _code & lowmask(material_bits) );
     }
     
     uint64_t morton() const {
-        return (_code >> (material_bits + level_bits)) & mask(location_bits);
+        return (_code >> (material_bits + level_bits)) & lowmask(location_bits);
     }
     
     uint64_t code() const { return _code; }
     
     glm::u16vec3 coordinates() const {
         return glm::u16vec3(unmorton(morton()));
+    }
+    
+    /*
+     * These functions create a new voxel with a given field modified.
+     */
+    voxel with_level(uint8_t l) const {
+        uint64_t mask = lowmask(material_bits) | highmask(location_bits);
+        return voxel( (_code & mask) | (l << material_bits) );
+    }
+    
+    voxel with_material(material_t mat) const {
+        return voxel( (_code & highmask(location_bits + level_bits)) | mat );
+    }
+    
+    voxel with_morton(uint64_t m) const {
+        uint64_t mask = lowmask(material_bits + level_bits);
+        
+        return voxel( (_code & mask) | (m << (material_bits + level_bits)) );
+    }
+    
+    voxel with_coordinates(glm::u16vec3 c) const {
+        return with_morton(ocmesh::morton(glm::u32vec3(c)));
     }
     
     // The size of the voxel edge expressed in base units
@@ -164,7 +192,7 @@ public:
     std::array<voxel, 6> neighborhood() const;
     
 private:
-    static uint64_t pack(uint64_t morton, uint8_t level, uint32_t material)
+    static uint64_t pack(uint64_t morton, uint8_t level, material_t material)
     {
         return morton << (material_bits + level_bits) |
                level  <<  material_bits               |
@@ -226,7 +254,7 @@ constexpr bool add_is_safe(uint16_t x, uint16_t y) {
  * not exist at all. This case manifests itself as a possible overflow or
  * underflow in the operations outlined above, and it happens when we're trying
  * to find the neighbor of a voxel that is at the extreme edge of the space,
- * so that the neighbor in this particular direction would fall of the border.
+ * so that the neighbor in this particular direction would fall off the border.
  *
  * In this case the function returns a void voxel.
  */
@@ -264,7 +292,7 @@ voxel voxel::neighbor(direction d) const
 
     // Build the new voxel. If has_neighbor is false we obtain a void voxel.
     return voxel(has_neighbor * coordinates,
-                 has_neighbor * level(),
+                 has_neighbor * max_level,
                  has_neighbor * material());
 }
     
