@@ -23,7 +23,7 @@ namespace ocmesh {
     
     namespace details {
         
-        CSG::~CSG() = default;
+        object::~object() = default;
         binary_operation_t::~binary_operation_t() = default;
         
         float sphere_t::distance(glm::vec3 const&from) {

@@ -1,0 +1,15 @@
+#
+# Lines starting with a 'sharp' sign are comments
+#
+
+# We can assign names to primitives and reuse them
+object base_sphere = sphere(20)
+
+object mycup = intersect(base_sphere, yscale(base_sphere, 5))
+
+# Materials have to be declared
+material metal
+
+# mycup is declared as one of the final objects of the scene,
+# so we must set the material
+build mycup metal

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C95005311A4AF478009BD371 /* csg_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C95005301A4AF478009BD371 /* csg_parser.cpp */; };
 		C96E770019F951E800148261 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E76FF19F951E800148261 /* main.cpp */; };
 		C96E770219F951FB00148261 /* csg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E770119F951FB00148261 /* csg.cpp */; };
 		C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9EAC3931A474BC2001CB704 /* octree.cpp */; };
@@ -37,6 +38,8 @@
 /* Begin PBXFileReference section */
 		C92B71C01A41C64C00FDAC8E /* voxel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = voxel.h; sourceTree = "<group>"; };
 		C941E9AF19FD47E700ACEAF0 /* morton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = morton.h; sourceTree = "<group>"; };
+		C95005301A4AF478009BD371 /* csg_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg_parser.cpp; sourceTree = "<group>"; };
+		C95005331A4AF934009BD371 /* test.csg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.csg; sourceTree = "<group>"; };
 		C96E75E619F8F69B00148261 /* ocmesh */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ocmesh; sourceTree = BUILT_PRODUCTS_DIR; };
 		C96E75F519F8F9B700148261 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		C96E75FA19F8FF7E00148261 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -338,6 +341,7 @@
 			isa = PBXGroup;
 			children = (
 				C96E770119F951FB00148261 /* csg.cpp */,
+				C95005301A4AF478009BD371 /* csg_parser.cpp */,
 				C9EAC3931A474BC2001CB704 /* octree.cpp */,
 			);
 			path = src;
@@ -650,6 +654,7 @@
 			isa = PBXGroup;
 			children = (
 				C96E76FF19F951E800148261 /* main.cpp */,
+				C95005331A4AF934009BD371 /* test.csg */,
 			);
 			path = test;
 			sourceTree = "<group>";
@@ -734,6 +739,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C95005311A4AF478009BD371 /* csg_parser.cpp in Sources */,
 				C96E770019F951E800148261 /* main.cpp in Sources */,
 				C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */,
 				C96E770219F951FB00148261 /* csg.cpp in Sources */,
@@ -797,6 +803,7 @@
 					"-Wno-c++98-compat-pedantic",
 					"-Wno-padded",
 					"-Wno-float-equal",
+					"-Wno-switch-enum",
 				);
 			};
 			name = Debug;
@@ -854,6 +861,7 @@
 					"-Wno-c++98-compat-pedantic",
 					"-Wno-padded",
 					"-Wno-float-equal",
+					"-Wno-switch-enum",
 				);
 			};
 			name = Release;

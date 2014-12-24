@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef OCMESH_CSG_H__
-#define OCMESH_CSG_H__
+#ifndef OCMESH_object_H__
+#define OCMESH_object_H__
 
 #include "meta.h"
 #include "glm.h"
 
 #include <std14/memory>
 #include <iterator>
+#include <istream>
 #include <vector>
+#include <deque>
 
 namespace ocmesh {
 
@@ -30,63 +32,64 @@ namespace ocmesh {
         /*
          * User facing primitives and operations.
          */
-        class CSG {
+        class scene;
+        
+        class object
+        {
+            scene *_scene;
         public:
-            virtual ~CSG();
+            object(scene *s) : _scene(s) { }
+            
+            virtual ~object();
+            
+            class scene *scene() const { return _scene; }
             
             virtual float distance(glm::vec3 const& from) = 0;
         };
+
+        using ptr = object *;
         
-        using ptr = std::unique_ptr<CSG>;
+        std::vector<object *> parse(std::istream &s);
         
-        class Scene {
-        public:
-            Scene() = default;
-            Scene(Scene const&) = default;
-            Scene(Scene     &&) = default;
-            
-            Scene& operator=(Scene const&) = default;
-            Scene& operator=(Scene     &&) = default;
-            
-        private:
-            std::vector<ptr> _objects;
-        };
-        
-        class sphere_t : public CSG
+        class sphere_t : public object
         {
             float _radius;
             
         public:
-            sphere_t(float radius) : _radius(radius) { }
+            sphere_t(class scene *s, float radius)
+                : object(s), _radius(radius) { }
             
             float radius() const { return _radius; }
             
             float distance(glm::vec3 const& from) override;
         };
         
-        class cube_t : public CSG
+        class cube_t : public object
         {
             float _side;
             
         public:
-            cube_t(float side) : _side(side) { }
+            cube_t(class scene *s, float side)
+                : object(s), _side(side) { }
             
             float side() const { return _side; }
             
             float distance(glm::vec3 const& from) override;
         };
         
-        class binary_operation_t : public CSG {
-            ptr _left;
-            ptr _right;
+        class binary_operation_t : public object
+        {
+            object *_left;
+            object *_right;
             
         public:
-            binary_operation_t(ptr left, ptr right)
-                : _left(std::move(left)), _right(std::move(right)) { }
+            binary_operation_t(class scene *scene, object *left, object *right)
+                : object(scene), _left(left), _right(right) { }
+
             virtual ~binary_operation_t();
             
-            CSG *left()  const { return _left.get();  }
-            CSG *right() const { return _right.get(); }
+            object *left()  const { return _left;  }
+            object *right() const { return _right; }
         };
         
         class union_t : public binary_operation_t {
@@ -110,137 +113,194 @@ namespace ocmesh {
             float distance(glm::vec3 const& from) override;
         };
         
-        class transform_t : public CSG
+        class transform_t : public object
         {
-            ptr       _child;
+            object *_child;
             glm::mat4 _transform;
             
         public:
-            transform_t(ptr child, glm::mat4 const&transform)
-                : _child(std::move(child)), _transform(transform) { }
+            transform_t(class scene *scene,
+                        object *child, glm::mat4 const&transform)
+                : object(scene), _child(child), _transform(transform) { }
             
-            CSG *child() const { return _child.get(); }
+            object *child() const { return _child; }
             glm::mat4 const&transform() const { return _transform; }
             
             float distance(glm::vec3 const& from) override;
         };
         
+        /*
+         * Class that owns all the objects of the scene
+         */
+        class scene
+        {
+            std::deque<std::unique_ptr<object>> _objects;
+            
+        private:
+            template<typename T, typename ...Args,
+                     REQUIRES(std::is_constructible<T, scene *, Args...>::value)>
+            object *make(Args&& ...args) {
+                auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
+                _objects.push_back(std::move(p));
+                return _objects.back().get();
+            }
+            
+        public:
+            scene() = default;
+            scene(scene const&) = delete;
+            scene(scene     &&) = default;
+            
+            scene &operator=(scene const&) = delete;
+            scene &operator=(scene     &&) = default;
+            
+            
+            /*
+             * Primitives
+             */
+            object *sphere(float radius) {
+                return make<sphere_t>(radius);
+            }
+            
+            object *cube(float side) {
+                return make<cube_t>(side);
+            }
+            
+            /*
+             * Binary operations friend declarations
+             */
+            friend
+            object *unite(object *left, object *right);
+            
+            friend
+            object *intersect(object *left, object *right);
+            
+            friend
+            object *subtract(object *left, object *right);
+            
+            friend
+            object *transform(object *node, glm::mat4 const&matrix);
+        };
         
-        // Primitives
-        inline ptr sphere(float radius) {
-            return std14::make_unique<sphere_t>(radius);
+        
+        /*
+         * Binary operations
+         */
+        inline object *unite(object *left, object *right) {
+            assert(left->scene() == right->scene());
+            
+            return left->scene()->make<union_t>(left, right);
         }
         
-        inline ptr cube(float side) {
-            return std14::make_unique<cube_t>(side);
-        }
-        
-        // Combining nodes
-        inline ptr unite(ptr left, ptr right) {
-            return std14::make_unique<union_t>(std::move(left),
-                                               std::move(right));
+        inline object *intersect(object *left, object *right) {
+            assert(left->scene() == right->scene());
+            
+            return left->scene()->make<intersection_t>(left, right);
         }
         
         template<typename ...Args>
-        inline ptr unite(ptr node, Args&& ...args) {
+        inline object *unite(object *node, Args&& ...args) {
             return unite(std::move(node), unite(std::forward<Args>(args)...));
         }
         
-        inline ptr intersect(ptr left, ptr right) {
-            return std14::make_unique<intersection_t>(std::move(left),
-                                                      std::move(right));
+        inline object *subtract(object *left, object *right) {
+            assert(left->scene() == right->scene());
+            
+            return left->scene()->make<difference_t>(left, right);
         }
         
+        /*
+         * Transform
+         * Use this function directly only if you know what you're doing.
+         * Use scale/rotate/translate instead.
+         * The matrix must be a transform from object to world space
+         */
+        inline object *transform(object *node, glm::mat4 const&matrix) {
+            return node->scene()->make<transform_t>(node, matrix);
+        }
+        
+        /*
+         * Convenience functions to call the above ones
+         */
         template<typename ...Args>
-        inline ptr intersect(ptr node, Args&& ...args) {
+        inline object *intersect(object *node, Args&& ...args) {
             return intersect(std::move(node),
                              unite(std::forward<Args>(args)...));
         }
         
-        inline ptr subtract(ptr left, ptr right) {
-            return std14::make_unique<difference_t>(std::move(left),
-                                                    std::move(right));
-        }
+        
         
         template<typename ...Args>
-        inline ptr subtract(ptr node, Args&& ...args) {
+        inline object *subtract(object *node, Args&& ...args) {
             return subtract(std::move(node),
                             unite(std::forward<Args>(args)...));
         }
         
-        // Transform nodes
-        // Use this function only if you know what you're doing.
-        // Use scale/rotate/translate instead.
-        // The matrix must be a transform from object to world space
-        inline ptr transform(ptr node, glm::mat4 const&matrix) {
-            return std14::make_unique<transform_t>(std::move(node), matrix);
-        }
-        
-        inline ptr scale(ptr node, glm::vec3 const&factors) {
+        inline object *scale(object *node, glm::vec3 const&factors) {
             assert(glm::all(glm::notEqual(factors, {})) &&
                    "Scaling factor components must be non-zero");
             return transform(std::move(node),
                              glm::scale(glm::vec3(1, 1, 1) / factors));
         }
         
-        inline ptr scale(ptr node, float factor) {
+        inline object *scale(object *node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), { factor, factor, factor });
         }
         
-        inline ptr xscale(ptr node, float factor) {
+        inline object *xscale(object *node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {factor, 1, 1});
         }
         
-        inline ptr yscale(ptr node, float factor) {
+        inline object *yscale(object *node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {1, factor, 1});
         }
         
-        inline ptr zscale(ptr node, float factor) {
+        inline object *zscale(object *node, float factor) {
             assert(factor != 0 && "Scaling factor must be non-zero");
             return scale(std::move(node), {1, 1, factor});
         }
         
-        inline ptr rotate(ptr node, float angle, glm::vec3 const&axis) {
+        inline object *rotate(object *node, float angle, glm::vec3 const&axis) {
             return transform(std::move(node), glm::rotate(-angle, axis));
         }
         
-        inline ptr xrotate(ptr node, float angle) {
+        inline object *xrotate(object *node, float angle) {
             return rotate(std::move(node), angle, {1, 0, 0});
         }
         
-        inline ptr yrotate(ptr node, float angle) {
+        inline object *yrotate(object *node, float angle) {
             return rotate(std::move(node), angle, {0, 1, 0});
         }
         
-        inline ptr zrotate(ptr node, float angle) {
+        inline object *zrotate(object *node, float angle) {
             return rotate(std::move(node), angle, {0, 0, 1});
         }
         
-        inline ptr translate(ptr node, glm::vec3 const&offsets) {
+        inline object *translate(object *node, glm::vec3 const&offsets) {
             return transform(std::move(node), glm::translate(-offsets));
         }
         
-        inline ptr xtranslate(ptr node, float offset) {
+        inline object *xtranslate(object *node, float offset) {
             return translate(std::move(node), {offset, 0, 0});
         }
         
-        inline ptr ytranslate(ptr node, float offset) {
+        inline object *ytranslate(object *node, float offset) {
             return translate(std::move(node), {0, offset, 0});
         }
         
-        inline ptr ztranslate(ptr node, float offset) {
+        inline object *ztranslate(object *node, float offset) {
             return translate(std::move(node), {0, 0, offset});
         }
     }
     
     namespace csg {
-        using details::CSG;
+        using details::object;
+        using details::scene;
         using details::ptr;
-        using details::sphere;
-        using details::cube;
+        
+        using details::parse;
         
         using details::unite;
         using details::intersect;

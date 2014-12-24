@@ -120,6 +120,13 @@ public:
     }
     
     /*
+     * The size of the voxel edge expressed in base units
+     */
+    uint16_t size() const {
+        return 1 << height();
+    }
+    
+    /*
      * These functions create a new voxel with a given field modified.
      */
     voxel with_level(uint8_t l) const {
@@ -139,11 +146,6 @@ public:
     
     voxel with_coordinates(glm::u16vec3 c) const {
         return with_morton(ocmesh::morton(glm::u32vec3(c)));
-    }
-    
-    // The size of the voxel edge expressed in base units
-    uint16_t size() const {
-        return 1 << height();
     }
     
     /*
