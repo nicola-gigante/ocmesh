@@ -31,12 +31,12 @@ int main()
 {
     csg::scene scene;
     
-    csg::ptr sphere = scene.sphere(42);
+    csg::object *sphere = scene.sphere(42);
     
     assert(sphere->distance({  0, 0, 0 }) == -42);
     assert(sphere->distance({ 43, 0, 0 }) ==   1);
     
-    csg::ptr cube = scene.cube(42);
+    csg::object *cube = scene.cube(42);
     
     assert(cube->distance({   0,   0,   0}) == -21);
     assert(cube->distance({  21,  21,  21}) ==   0);

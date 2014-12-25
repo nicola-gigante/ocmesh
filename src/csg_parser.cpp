@@ -15,6 +15,7 @@
  */
 
 #include "csg.h"
+#include "voxel.h"
 
 #include <fstream>
 #include <map>
@@ -212,8 +213,9 @@ namespace details {
                 case token::object:
                     return parseObject();
                 case token::material:
+                    return parseMaterial();
                 case token::build:
-                    // something...
+                    return parseBuildDirective();
                 default:
                     error();
             }
@@ -231,11 +233,13 @@ namespace details {
             _bindings[name] = parseObjectExpression();
         }
         
-        ptr parseObjectExpression()
+        object *parseObjectExpression()
         {
             assert(_current.is(token::primitive, token::binary, token::transform));
             
             switch (_current.kind()) {
+                case token::identifier:
+                    return parseVariableReference();
                 case token::primitive:
                     return parsePrimitive();
                 case token::binary:
@@ -248,11 +252,22 @@ namespace details {
             }
         }
         
-        ptr parsePrimitive()
+        object *parseVariableReference() {
+            assert(_current.is(token::identifier));
+            
+            std::string name = _current.text();
+            
+            if(_bindings.find(name) == _bindings.end())
+                error();
+            
+            return _bindings[name];
+        }
+        
+        object *parsePrimitive()
         {
             static const
-            std::map<std::string, std::function<ptr(float)>> primitives = {
-                { "cube"  , [this](float x) { return _scene.cube(x);   } },
+            std::map<std::string, std::function<object *(float)>> primitives = {
+                { "cube"  , [this](float x) { return _scene.sphere(x); } },
                 { "sphere", [this](float x) { return _scene.sphere(x); } }
             };
             
@@ -268,9 +283,10 @@ namespace details {
             return primitives.at(name)(argument);
         }
         
-        ptr parseBinary()
+        object *parseBinary()
         {
-            static const std::map<std::string, ptr(*)(ptr, ptr)> binaries = {
+            static const
+            std::map<std::string, object *(*)(object *, object *)> binaries = {
                 { "unite"    , &csg::unite     },
                 { "intersect", &csg::intersect },
                 { "subtract" , &csg::subtract  }
@@ -281,14 +297,24 @@ namespace details {
             std::string name = _current.text();
             
             lex(token::lparen);
-            ptr lhs = parseObjectExpression();
-            ptr rhs = parseObjectExpression();
+            object *lhs = parseObjectExpression();
+            lex(token::comma);
+            object *rhs = parseObjectExpression();
             lex(token::rparen);
             
             assert(binaries.find(name) != binaries.end());
             
             return binaries.at(name)(std::move(lhs), std::move(rhs));
         }
+        
+        void parseMaterial() {
+            assert(_current.is(token::material));
+
+            lex(token::identifier);
+            _materials[_current.text()] = ++_last_material;
+        }
+        
+        void parseBuildDirective() { }
         
         void error() {
             assert("Error handling unimplemented");
@@ -298,10 +324,12 @@ namespace details {
         std::istream &_stream;
         token _current;
         scene _scene;
-        std::map<std::string, ptr> _bindings;
+        std::map<std::string, object *> _bindings;
+        std::map<std::string, voxel::material_t> _materials;
+        voxel::material_t _last_material = 0;
     };
     
-    std::vector<ptr> parse(std::istream &)
+    std::vector<object *> parse(std::istream &)
     {
         return { };
     }

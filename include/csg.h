@@ -29,11 +29,12 @@
 namespace ocmesh {
 
     namespace details {
-        /*
-         * User facing primitives and operations.
-         */
+        
         class scene;
         
+        /*
+         * Root class of the CSG nodes hierarchy
+         */
         class object
         {
             scene *_scene;
@@ -47,17 +48,16 @@ namespace ocmesh {
             virtual float distance(glm::vec3 const& from) = 0;
         };
 
-        using ptr = object *;
-        
-        std::vector<object *> parse(std::istream &s);
-        
+        /*
+         * Basic primitives
+         */
         class sphere_t : public object
         {
             float _radius;
             
         public:
             sphere_t(class scene *s, float radius)
-                : object(s), _radius(radius) { }
+            : object(s), _radius(radius) { }
             
             float radius() const { return _radius; }
             
@@ -70,13 +70,76 @@ namespace ocmesh {
             
         public:
             cube_t(class scene *s, float side)
-                : object(s), _side(side) { }
+            : object(s), _side(side) { }
             
             float side() const { return _side; }
             
             float distance(glm::vec3 const& from) override;
         };
         
+        /*
+         * Class that owns all the objects of the scene
+         */
+        class scene
+        {
+        public:
+            scene() = default;
+            scene(scene const&) = delete;
+            scene(scene     &&) = default;
+            
+            scene &operator=(scene const&) = delete;
+            scene &operator=(scene     &&) = default;
+            
+            /*
+             * Get the global objects of the scene
+             */
+            
+            
+            /*
+             * Primitives
+             */
+            object *sphere(float radius) {
+                return make<sphere_t>(radius);
+            }
+            
+            object *cube(float side) {
+                return make<cube_t>(side);
+            }
+            
+            /*
+             * Binary operations friend declarations
+             */
+            friend
+            object *unite(object *left, object *right);
+            
+            friend
+            object *intersect(object *left, object *right);
+            
+            friend
+            object *subtract(object *left, object *right);
+            
+            friend
+            object *transform(object *node, glm::mat4 const&matrix);
+            
+        private:
+            template<typename T, typename ...Args,
+                     REQUIRES(std::is_constructible<T, scene *, Args...>::value)>
+            object *make(Args&& ...args)
+            {
+                auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
+                _objects.push_back(std::move(p));
+                return _objects.back().get();
+            }
+            
+        private:
+            std::deque<std::unique_ptr<object>> _objects;
+        };
+        
+        std::vector<object *> parse(std::istream &s);
+        
+        /*
+         * Classes representing CSG nodes
+         */
         class binary_operation_t : public object
         {
             object *_left;
@@ -84,8 +147,8 @@ namespace ocmesh {
             
         public:
             binary_operation_t(class scene *scene, object *left, object *right)
-                : object(scene), _left(left), _right(right) { }
-
+            : object(scene), _left(left), _right(right) { }
+            
             virtual ~binary_operation_t();
             
             object *left()  const { return _left;  }
@@ -121,66 +184,13 @@ namespace ocmesh {
         public:
             transform_t(class scene *scene,
                         object *child, glm::mat4 const&transform)
-                : object(scene), _child(child), _transform(transform) { }
+            : object(scene), _child(child), _transform(transform) { }
             
             object *child() const { return _child; }
             glm::mat4 const&transform() const { return _transform; }
             
             float distance(glm::vec3 const& from) override;
         };
-        
-        /*
-         * Class that owns all the objects of the scene
-         */
-        class scene
-        {
-            std::deque<std::unique_ptr<object>> _objects;
-            
-        private:
-            template<typename T, typename ...Args,
-                     REQUIRES(std::is_constructible<T, scene *, Args...>::value)>
-            object *make(Args&& ...args) {
-                auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
-                _objects.push_back(std::move(p));
-                return _objects.back().get();
-            }
-            
-        public:
-            scene() = default;
-            scene(scene const&) = delete;
-            scene(scene     &&) = default;
-            
-            scene &operator=(scene const&) = delete;
-            scene &operator=(scene     &&) = default;
-            
-            
-            /*
-             * Primitives
-             */
-            object *sphere(float radius) {
-                return make<sphere_t>(radius);
-            }
-            
-            object *cube(float side) {
-                return make<cube_t>(side);
-            }
-            
-            /*
-             * Binary operations friend declarations
-             */
-            friend
-            object *unite(object *left, object *right);
-            
-            friend
-            object *intersect(object *left, object *right);
-            
-            friend
-            object *subtract(object *left, object *right);
-            
-            friend
-            object *transform(object *node, glm::mat4 const&matrix);
-        };
-        
         
         /*
          * Binary operations
@@ -298,7 +308,6 @@ namespace ocmesh {
     namespace csg {
         using details::object;
         using details::scene;
-        using details::ptr;
         
         using details::parse;
         
