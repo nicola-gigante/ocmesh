@@ -22,7 +22,7 @@
 #include <cmath>
 #include <ostream>
 
-#include "meta.h"
+#include "utils/meta.h"
 #include "morton.h"
 
 namespace ocmesh {

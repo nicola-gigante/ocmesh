@@ -36,6 +36,10 @@ namespace ocmesh {
                              std::abs(from.z)}) - _side / 2;
         }
         
+        float toplevel_t::distance(glm::vec3 const& from) {
+            return _child->distance(from);
+        }
+        
         float transform_t::distance(glm::vec3 const&from)
         {
             glm::vec4 v = { from.x, from.y, from.z, 1.0f };

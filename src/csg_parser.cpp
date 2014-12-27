@@ -314,7 +314,20 @@ namespace details {
             _materials[_current.text()] = ++_last_material;
         }
         
-        void parseBuildDirective() { }
+        void parseBuildDirective() {
+            assert(_current.is(token::build));
+            
+            std::string name = lex(token::identifier).text();
+            std::string material = lex(token::identifier).text();
+            
+            if(_bindings.find(name) == _bindings.end())
+                error();
+            if(_materials.find(material) == _materials.end())
+                error();
+            
+            object *obj = _bindings[name];
+            obj->scene()->toplevel(obj, _materials[material]);
+        }
         
         void error() {
             assert("Error handling unimplemented");
@@ -333,9 +346,6 @@ namespace details {
     {
         return { };
     }
-    
-    
-    
     
 } // namespace details
 } // namespace ocmesh
