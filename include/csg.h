@@ -160,7 +160,7 @@ namespace details {
         
     private:
         template<typename T, typename ...Args,
-                 REQUIRES(std::is_constructible<T, scene *, Args...>::value)>
+                 REQUIRES(std::is_constructible<T, scene *, Args...>())>
         T *make(Args&& ...args)
         {
             auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);

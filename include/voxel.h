@@ -31,7 +31,7 @@ namespace details {
 /*
  * Little utilities needed below
  */
-template<typename T, REQUIRES(std::is_integral<T>::value)>
+template<typename T, REQUIRES(std::is_integral<T>())>
 constexpr uint8_t clog2(T v, uint8_t log = 0) {
     return v == 1 ? log : clog2(v / 2, log + 1);
 }
