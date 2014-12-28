@@ -3,6 +3,7 @@ cpputils
 glm
 *.xcworkspace
 xcuserdata
+xcuserdata/*
 *~
 *.swp
 *.dSYM

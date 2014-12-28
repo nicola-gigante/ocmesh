@@ -30,14 +30,63 @@ namespace ocmesh {
             return glm::length(from) - _radius;
         }
         
+        void sphere_t::dump(std::ostream &o) const {
+            o << "sphere(" << _radius << ")";
+        }
+        
         float cube_t::distance(glm::vec3 const&from) {
             return std::max({std::abs(from.x),
                              std::abs(from.y),
                              std::abs(from.z)}) - _side / 2;
         }
         
+        void cube_t::dump(std::ostream &o) const {
+            o << "cube(" << _side << ")";
+        }
+        
         float toplevel_t::distance(glm::vec3 const& from) {
             return _child->distance(from);
+        }
+        
+        void toplevel_t::dump(std::ostream &o) const {
+            o << "build " << _material << " ";
+            _child->dump(o);
+        }
+        
+        float union_t::distance(const glm::vec3 &from) {
+            return std::min(left()->distance(from), right()->distance(from));
+        }
+        
+        void union_t::dump(std::ostream &o) const {
+            o << "unite(";
+            left()->dump(o);
+            o << ", ";
+            right()->dump(o);
+            o << ")";
+        }
+        
+        float intersection_t::distance(const glm::vec3 &from) {
+            return std::max(left()->distance(from), - right()->distance(from));
+        }
+        
+        void intersection_t::dump(std::ostream &o) const {
+            o << "intersect(";
+            left()->dump(o);
+            o << ", ";
+            right()->dump(o);
+            o << ")";
+        }
+        
+        float difference_t::distance(const glm::vec3 &from) {
+            return std::max(left()->distance(from), right()->distance(from));
+        }
+        
+        void difference_t::dump(std::ostream &o) const {
+            o << "subtract(";
+            left()->dump(o);
+            o << ", ";
+            right()->dump(o);
+            o << ")";
         }
         
         float transform_t::distance(glm::vec3 const&from)
@@ -47,16 +96,10 @@ namespace ocmesh {
             return child()->distance((transform() * v).xyz());
         }
         
-        float union_t::distance(const glm::vec3 &from) {
-            return std::min(left()->distance(from), right()->distance(from));
-        }
-        
-        float intersection_t::distance(const glm::vec3 &from) {
-            return std::max(left()->distance(from), - right()->distance(from));
-        }
-        
-        float difference_t::distance(const glm::vec3 &from) {
-            return std::max(left()->distance(from), right()->distance(from));
+        void transform_t::dump(std::ostream &o) const {
+            o << "transform(matrix..., ";
+            _child->dump(o);
+            o << ")";
         }
     }
 }

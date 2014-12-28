@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <utility>
 #include <cassert>
 #include <vector>
@@ -27,43 +28,25 @@
 using namespace ocmesh;
 
 
-int main()
+int main(int argc, char *argv[])
 {
-    csg::scene scene;
-    
-    csg::object *sphere = scene.sphere(42);
-    
-    assert(sphere->distance({  0, 0, 0 }) == -42);
-    assert(sphere->distance({ 43, 0, 0 }) ==   1);
-    
-    csg::object *cube = scene.cube(42);
-    
-    assert(cube->distance({   0,   0,   0}) == -21);
-    assert(cube->distance({  21,  21,  21}) ==   0);
-    assert(cube->distance({  22,  21,  21}) ==   1);
-    
-    std::random_device dev;
-    std::mt19937 gen(dev());
-    std::uniform_int_distribution<uint16_t> dist(0, voxel::max_coordinate);
-    
-    for(int i = 0; i < 1000; ++i) {
-        uint16_t x = dist(gen), y = dist(gen), z = dist(gen);
-        
-        glm::u16vec3 coordinates = {x, y, z};
-        glm::u16vec3 unpacked = voxel(coordinates, 0, 0).coordinates();
-    
-        assert(unpacked == coordinates);
+    if(argc < 2) {
+        std::cerr << "Please specify a file to parse\n";
+        return 1;
     }
     
-    voxel v({42,42,42}, 12, 0);
+    std::ifstream file(argv[1]);
     
-    std::cout << "original: " << v                        << "\n\n";
-    std::cout << "left:     " << v.neighbor(voxel::left)  << "\n";
-    std::cout << "right:    " << v.neighbor(voxel::right) << "\n\n";
-    std::cout << "up:       " << v.neighbor(voxel::up)    << "\n";
-    std::cout << "down:     " << v.neighbor(voxel::down)  << "\n\n";
-    std::cout << "back:     " << v.neighbor(voxel::back)  << "\n";
-    std::cout << "front:    " << v.neighbor(voxel::front) << "\n";
+    if(!file) {
+        std::cerr << "Unable to read file '" << argv[1] << "'\n";
+        return 2;
+    }
+    
+    csg::scene scene;
+    
+    scene.parse(file);
+    
+    std::cout << scene << "\n";
     
     return 0;
 }

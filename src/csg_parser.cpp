@@ -54,10 +54,10 @@ namespace details {
         
         token() = default;
         
-        token(kind_t kind, std::string text)
+        token(kind_t kind, std::string text = std::string{})
             : _kind(kind), _text(std::move(text)) { }
         
-        token(float value) : _kind(number), _value(value) { }
+        explicit token(float value) : _kind(number), _value(value) { }
         
         kind_t kind() const { return _kind; }
         
@@ -185,9 +185,8 @@ namespace details {
     class parser
     {
     public:
-        parser(std::istream &stream) : _stream(stream) { }
-        
-        scene &results() { return _scene; }
+        parser(scene *scene, std::istream &stream)
+            : _scene(scene), _stream(stream) { }
         
         void parse()
         {
@@ -228,14 +227,13 @@ namespace details {
 
             lex(token::equals);
             
-            lex(token::primitive, token::binary, token::transform);
-
             _bindings[name] = parseObjectExpression();
         }
         
         object *parseObjectExpression()
         {
-            assert(_current.is(token::primitive, token::binary, token::transform));
+            lex(token::identifier, token::primitive,
+                token::binary, token::transform);
             
             switch (_current.kind()) {
                 case token::identifier:
@@ -267,8 +265,8 @@ namespace details {
         {
             static const
             std::map<std::string, std::function<object *(float)>> primitives = {
-                { "cube"  , [this](float x) { return _scene.sphere(x); } },
-                { "sphere", [this](float x) { return _scene.sphere(x); } }
+                { "cube"  , [this](float x) { return _scene->sphere(x); } },
+                { "sphere", [this](float x) { return _scene->sphere(x); } }
             };
             
             assert(_current.is(token::primitive));
@@ -329,22 +327,24 @@ namespace details {
             obj->scene()->toplevel(obj, _materials[material]);
         }
         
+        [[noreturn]]
         void error() {
-            assert("Error handling unimplemented");
+            assert(!"Syntax error: Error handling unimplemented");
         }
         
     private:
+        scene *_scene;
         std::istream &_stream;
+        
         token _current;
-        scene _scene;
         std::map<std::string, object *> _bindings;
         std::map<std::string, voxel::material_t> _materials;
         voxel::material_t _last_material = 0;
     };
     
-    std::vector<object *> parse(std::istream &)
+    void scene::parse(std::istream &stream)
     {
-        return { };
+        parser(this, stream).parse();
     }
     
 } // namespace details

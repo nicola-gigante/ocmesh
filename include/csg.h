@@ -44,8 +44,9 @@ namespace details {
         virtual ~object();
         
         class scene *scene() const { return _scene; }
-               
+        
         virtual float distance(glm::vec3 const& from) = 0;
+        virtual void dump(std::ostream &) const = 0;
     };
 
     /*
@@ -62,6 +63,7 @@ namespace details {
         float radius() const { return _radius; }
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     class cube_t : public object
@@ -70,11 +72,12 @@ namespace details {
         
     public:
         cube_t(class scene *s, float side)
-        : object(s), _side(side) { }
+            : object(s), _side(side) { }
         
         float side() const { return _side; }
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     /*
@@ -94,6 +97,7 @@ namespace details {
         voxel::material_t material() const { return _material; }
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     /*
@@ -133,6 +137,11 @@ namespace details {
         }
         
         /*
+         * Function to fill the scene by parsing an input file
+         */
+        void parse(std::istream &);
+        
+        /*
          * Primitives
          */
         object *sphere(float radius) {
@@ -141,6 +150,25 @@ namespace details {
         
         object *cube(float side) {
             return make<cube_t>(side);
+        }
+        
+        friend std::ostream &operator<<(std::ostream &s, scene const&scene) {
+            for(auto t : scene._toplevels) {
+                t->dump(s);
+                s << "\n";
+            }
+            return s;
+        }
+        
+    private:
+        template<typename T, typename ...Args,
+                 REQUIRES(std::is_constructible<T, scene *, Args...>())>
+        T *make(Args&& ...args)
+        {
+            auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
+            T *r = p.get();
+            _objects.push_back(std::move(p));
+            return r;
         }
         
         /*
@@ -157,17 +185,6 @@ namespace details {
         
         friend
         object *transform(object *node, glm::mat4 const&matrix);
-        
-    private:
-        template<typename T, typename ...Args,
-                 REQUIRES(std::is_constructible<T, scene *, Args...>())>
-        T *make(Args&& ...args)
-        {
-            auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
-            T *r = p.get();
-            _objects.push_back(std::move(p));
-            return r;
-        }
         
     private:
         container_t<std::unique_ptr<object>> _objects;
@@ -199,6 +216,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     class intersection_t : public binary_operation_t {
@@ -206,6 +224,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     class difference_t : public binary_operation_t {
@@ -213,6 +232,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     class transform_t : public object
@@ -229,6 +249,7 @@ namespace details {
         glm::mat4 const&transform() const { return _transform; }
         
         float distance(glm::vec3 const& from) override;
+        void dump(std::ostream &) const override;
     };
     
     /*
