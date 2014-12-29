@@ -1,3 +1,4 @@
+// -*- C++ -*-
 /*
  * Copyright 2014 Nicola Gigante
  *
@@ -103,10 +104,23 @@ public:
      */
     void build(std::function<voxel::material_t(voxel)> split_function);
     
+    /*
+     * Different mesh formats supported by the mesh() function
+     */
+    enum mesh_t {
+        obj
+    };
+    
+    /*
+     * Export function, to dump the octree to a mesh file.
+     */
+    void mesh(mesh_t mesh_type, std::ostream &outs) const;
+    
 private:
     container_t  _data;
     glm::f32mat4 _transform; // default-constructed as the identity matrix
 };
+
     
 
 } // namespace details

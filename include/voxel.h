@@ -158,6 +158,13 @@ public:
     }
     
     /*
+     * This function returns an array with the coordinates of the eight
+     * corners of the voxel. The coordinates are still expressed in the
+     * virtual, unsigned integer coordinate space of the voxel
+     */
+    std::array<glm::u16vec3, 8> corners() const;
+    
+    /*
      * Get the children of the voxel, in Morton order.
      * Note that the children inherit the material from the parent.
      * Note also that the morton code of the first child (Left/Bottom/Back),
@@ -234,6 +241,28 @@ std::array<voxel, 8> voxel::children() const
     return results;
 }
 
+/*
+ * corners() member function implementation
+ */
+inline
+std::array<glm::u16vec3, 8> voxel::corners() const
+{
+    using vec = glm::u16vec3;
+    glm::u16vec3 c = coordinates();
+    uint16_t edge = size();
+        
+    return {
+        c,
+        c + vec{    0,    0, edge },
+        c + vec{    0, edge,    0 },
+        c + vec{    0, edge, edge },
+        c + vec{ edge,    0,    0 },
+        c + vec{ edge,    0, edge },
+        c + vec{ edge, edge,    0 },
+        c + vec{ edge, edge, edge }
+    };
+}
+    
 // Check if we can add x and y without overflow
 constexpr bool add_is_safe(uint16_t x, uint16_t y) {
     return x <= std::numeric_limits<uint16_t>::max() - y;

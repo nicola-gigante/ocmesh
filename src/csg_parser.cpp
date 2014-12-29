@@ -263,9 +263,11 @@ namespace details {
         
         object *parsePrimitive()
         {
+            using namespace std::placeholders;
+            
             static const
             std::map<std::string, std::function<object *(float)>> primitives = {
-                { "cube"  , [this](float x) { return _scene->sphere(x); } },
+                { "cube"  , [this](float x) { return _scene->cube(x);   } },
                 { "sphere", [this](float x) { return _scene->sphere(x); } }
             };
             
