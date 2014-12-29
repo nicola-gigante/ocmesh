@@ -60,9 +60,13 @@ int main(int argc, char *argv[])
     
     octree c;
     
-    c.build([](voxel) {
-        return 1;
+    c.build([](voxel v) -> voxel::material_t {
+        if(v.level() > 0)
+            return 2;
+        return voxel::unknown_material;
     });
+    
+    (*c.begin()) = c.begin()->with_material(1);
     
     for(auto v : c) {
         std::cout << v << "\n";

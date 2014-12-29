@@ -37,6 +37,8 @@ namespace details {
         return std::lower_bound(begin(), end(), candidate);
     }
     
+    // TODO: handle the case when the subdivision reaches the final level
+    //       but the split function still has not decided the material
     void octree::build(std::function<voxel::material_t(voxel)> split_function)
     {
         _data.push_back(voxel{});
@@ -45,22 +47,27 @@ namespace details {
         {
             voxel v = _data[i];
             uint8_t level = v.level();
-            if(level < voxel::max_level) {
-                voxel::material_t material = split_function(v);
-                
-                if(material == voxel::unknown_material) {
-                    auto children = v.children();
-                    _data[i] = children[0];
-                    _data.insert(_data.end(),
-                                 children.begin() + 1, children.end());
-                } else {
-                    _data[i] = _data[i].with_material(material);
-                }
+            
+            voxel::material_t material = split_function(v);
+            
+            if(level < voxel::max_level &&
+               material == voxel::unknown_material)
+            {
+                auto children = v.children();
+                _data[i] = children[0];
+                _data.insert(_data.end(),
+                             children.begin() + 1, children.end());
+                --i; // Decrement i to continue from this same voxel
+            } else {
+                _data[i] = _data[i].with_material(material);
             }
         }
+
+        assert(std::none_of(_data.begin(), _data.end(), [](voxel v) {
+            return v.material() == voxel::unknown_material;
+        }));
         
         std::sort(_data.begin(), _data.end());
     }
-    
 } // namespace details
 } // namespace ocmesh

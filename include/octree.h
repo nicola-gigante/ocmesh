@@ -87,8 +87,8 @@ public:
     
     /*
      * This is the main function to recursively build an octree with a given
-     * splitting rule. The octree is built in a breadth-first way, by applying
-     * the predicate to each voxel to determine if it has to be split.
+     * splitting rule. The octree is built in a by applying the predicate
+     * to each voxel to determine if it has to be split.
      *
      * The argument must be a function that given a voxel will return its
      * material. If the function returns voxel::unknown_material, the voxel

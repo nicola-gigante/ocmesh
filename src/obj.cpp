@@ -156,8 +156,6 @@ namespace details {
         }
         
     private:
-        
-    private:
         std::vector<glm::f32vec3> _vertices;
         std::vector<size_t> _indexes;
 
@@ -167,8 +165,11 @@ namespace details {
     void obj_mesh(octree const&oc, std::ostream &out)
     {
         obj o;
-        for(voxel v : oc)
-            o.cube(v);
+        for(voxel v : oc) {
+            assert(v.material() != voxel::unknown_material);
+            if(v.material() != 1) // Transparent air
+                o.cube(v);
+        }
         
         o.write(out);
     }

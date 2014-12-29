@@ -74,7 +74,7 @@ public:
     explicit voxel(uint64_t code) : _code(code) { }
     
     // Piecewise construction with encoded coordinates.
-    voxel(uint64_t morton, uint8_t level, material_t material)
+    voxel(uint64_t morton, level_t level, material_t material)
         : _code(pack(morton, level, material))
     {
         assert(level    <= max_level    && "Cubie level out of range");
@@ -82,7 +82,7 @@ public:
     }
     
     // Piecewise construction with unpacked coordinates.
-    voxel(glm::u16vec3 coordinates, uint8_t level = 0, uint32_t material = 0)
+    voxel(glm::u16vec3 coordinates, level_t level = 0, uint32_t material = 0)
         : voxel(details::morton(glm::u32vec3(coordinates)), level, material)
     {
         assert(coordinates.x <= max_coordinate && "X coordinate out of range");
@@ -97,8 +97,8 @@ public:
     /*
      * Functions to obtain the various components of voxel data
      */
-    uint8_t level() const {
-        return uint8_t((_code >> material_bits) & lowmask(level_bits));
+    level_t level() const {
+        return level_t((_code >> material_bits) & lowmask(level_bits));
     }
     
     uint8_t height() const {
@@ -129,7 +129,7 @@ public:
     /*
      * These functions create a new voxel with a given field modified.
      */
-    voxel with_level(uint8_t l) const {
+    voxel with_level(level_t l) const {
         uint64_t mask = lowmask(material_bits) | highmask(location_bits);
         return voxel( (_code & mask) | (l << material_bits) );
     }
@@ -178,12 +178,12 @@ public:
     enum corners : uint8_t
     {
         left_bottom_back,    // (0,0,0)
-        left_bottom_front,   // (0,0,1)
-        left_up_back,        // (0,1,0)
-        left_up_front,       // (0,1,1)
         right_bottom_back,   // (1,0,0)
-        right_bottom_front,  // (1,0,1)
+        left_up_back,        // (0,1,0)
         right_up_back,       // (1,1,0)
+        left_bottom_front,   // (0,0,1)
+        right_bottom_front,  // (1,0,1)
+        left_up_front,       // (0,1,1)
         right_up_front       // (1,1,1)
     };
     
@@ -203,8 +203,6 @@ public:
      */
     std::array<voxel, 8> children() const;
     
-    
-    
     /*
      * Get a voxel represeting the neighbor of the voxel at the given direction,
      * and with the same size.
@@ -221,7 +219,7 @@ public:
     std::array<voxel, 6> neighborhood() const;
     
 private:
-    static uint64_t pack(uint64_t morton, uint8_t level, material_t material)
+    static uint64_t pack(uint64_t morton, level_t level, material_t material)
     {
         return morton << (material_bits + level_bits) |
                level  <<  material_bits               |
@@ -242,15 +240,16 @@ private:
 inline
 std::array<voxel, 8> voxel::children() const
 {
-    assert(level() > 0 && "Can't subdivide a zero-level node");
+    assert(height() > 0 && "Can't subdivide a leaf node");
     
     std::array<voxel, 8> results;
     
-    // Decrement the level
-    uint64_t l = level() - 1;
+    // Increment the level
+    uint64_t l = level() + 1;
+    uint64_t h = height() - 1;
 
     // Increment for each child
-    uint64_t inc = 1 << (l * 3);
+    uint64_t inc = uint64_t(1) << (h * 3);
     
     uint64_t m = morton();
     for(voxel &v : results) {
@@ -262,7 +261,9 @@ std::array<voxel, 8> voxel::children() const
 }
 
 /*
- * corners() member function implementation
+ * corners() member function implementation. Note that the corners are produced
+ * in morton order, which in turn is reflected also by the order of the
+ * voxel::corner enumeration
  */
 inline
 std::array<glm::u16vec3, 8> voxel::corners() const
@@ -273,12 +274,12 @@ std::array<glm::u16vec3, 8> voxel::corners() const
         
     return {
         c,
-        c + vec{    0,    0, edge },
-        c + vec{    0, edge,    0 },
-        c + vec{    0, edge, edge },
         c + vec{ edge,    0,    0 },
-        c + vec{ edge,    0, edge },
+        c + vec{    0, edge,    0 },
         c + vec{ edge, edge,    0 },
+        c + vec{    0,    0, edge },
+        c + vec{ edge,    0, edge },
+        c + vec{    0, edge, edge },
         c + vec{ edge, edge, edge }
     };
 }

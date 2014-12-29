@@ -37,7 +37,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C92B71C01A41C64C00FDAC8E /* voxel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = voxel.h; sourceTree = "<group>"; };
+		C92B71C01A41C64C00FDAC8E /* voxel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = voxel.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		C941E9AF19FD47E700ACEAF0 /* morton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = morton.h; sourceTree = "<group>"; };
 		C95005301A4AF478009BD371 /* csg_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg_parser.cpp; sourceTree = "<group>"; };
 		C95005331A4AF934009BD371 /* test.csg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.csg; sourceTree = "<group>"; };
