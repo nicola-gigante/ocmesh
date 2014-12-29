@@ -158,6 +158,37 @@ public:
     }
     
     /*
+     * Enumeration of possible directions of the neighbors of a voxel.
+     */
+    enum direction : uint8_t
+    {
+        left,
+        right,
+        down,
+        up,
+        back,
+        front
+    };
+    
+    /*
+     * Enumeration of possible corners of the cube. Corners are returned by
+     * the corners() function in this order. Note that this corresponds to
+     * navigating corners in Morton order again
+     */
+    enum corners : uint8_t
+    {
+        left_bottom_back,    // (0,0,0)
+        left_bottom_front,   // (0,0,1)
+        left_up_back,        // (0,1,0)
+        left_up_front,       // (0,1,1)
+        right_bottom_back,   // (1,0,0)
+        right_bottom_front,  // (1,0,1)
+        right_up_back,       // (1,1,0)
+        right_up_front       // (1,1,1)
+    };
+    
+    
+    /*
      * This function returns an array with the coordinates of the eight
      * corners of the voxel. The coordinates are still expressed in the
      * virtual, unsigned integer coordinate space of the voxel
@@ -172,18 +203,7 @@ public:
      */
     std::array<voxel, 8> children() const;
     
-    /*
-     * Enumeration of possible directions of the neighbors of a voxel.
-     */
-    enum direction : uint8_t
-    {
-        left,
-        right,
-        down,
-        up,
-        back,
-        front
-    };
+    
     
     /*
      * Get a voxel represeting the neighbor of the voxel at the given direction,

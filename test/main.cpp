@@ -30,23 +30,45 @@ using namespace ocmesh;
 
 int main(int argc, char *argv[])
 {
-    if(argc < 2) {
-        std::cerr << "Please specify a file to parse\n";
+    if(argc < 3) {
+        std::cerr << "Usage: ocmesh <CSG input> <mesh output>\n";
         return 1;
     }
     
-    std::ifstream file(argv[1]);
+    std::string inputfile = argv[1];
+    std::string outputfile = argv[2];
     
-    if(!file) {
-        std::cerr << "Unable to read file '" << argv[1] << "'\n";
+    std::ifstream input(argv[1]);
+    std::ofstream output(argv[2]);
+
+    
+    if(!input) {
+        std::cerr << "Unable to open file for reading: '" << argv[1] << "'\n";
         return 2;
+    }
+    
+    if(!output) {
+        std::cerr << "Unable to open file for writing: '" << argv[2] << "'\n";
+        return 3;
     }
     
     csg::scene scene;
     
-    scene.parse(file);
+    scene.parse(input);
     
     std::cout << scene << "\n";
+    
+    octree c;
+    
+    c.build([](voxel) {
+        return 1;
+    });
+    
+    for(auto v : c) {
+        std::cout << v << "\n";
+    }
+    
+    c.mesh(octree::obj, output);
     
     return 0;
 }

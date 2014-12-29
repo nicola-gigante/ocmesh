@@ -300,6 +300,7 @@
 		C96E770119F951FB00148261 /* csg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = csg.cpp; sourceTree = "<group>"; };
 		C9A41EB21A50ACB300DE285E /* obj.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = obj.cpp; sourceTree = "<group>"; };
 		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
+		C9AB64891A51A13800F523A7 /* cube.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cube.obj; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.sh; };
 		C9AD92861A45941C00736AF9 /* glm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glm.h; sourceTree = "<group>"; };
 		C9E910CC1A07C3C0005A1AF0 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
 		C9EAC3911A4725B5001CB704 /* octree.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = octree.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
@@ -656,6 +657,7 @@
 		C96E76FE19F951E800148261 /* test */ = {
 			isa = PBXGroup;
 			children = (
+				C9AB64891A51A13800F523A7 /* cube.obj */,
 				C96E76FF19F951E800148261 /* main.cpp */,
 				C95005331A4AF934009BD371 /* test.csg */,
 			);
