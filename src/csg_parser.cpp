@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "utils/support.h"
+
 #include "csg.h"
 #include "voxel.h"
 
@@ -245,8 +247,7 @@ namespace details {
                 case token::transform:
                     return { };
                 default:
-                    assert(false && "Unreachable");
-                    break;
+                    code_unreachable();
             }
         }
         
@@ -332,6 +333,7 @@ namespace details {
         [[noreturn]]
         void error() {
             assert(!"Syntax error: Error handling unimplemented");
+            code_unreachable();
         }
         
     private:

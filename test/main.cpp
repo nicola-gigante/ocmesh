@@ -61,16 +61,19 @@ int main(int argc, char *argv[])
     octree c;
     
     c.build([](voxel v) -> voxel::material_t {
-        if(v.level() > 0)
-            return 2;
-        return voxel::unknown_material;
+        auto corner1 = glm::f32vec3(v.coordinates());
+        auto corner2 = glm::f32vec3(v.corners()[7]);
+               
+        if(glm::length(corner1) <= 4000) {
+            if(glm::length(corner2) <= 4000 || v.level() >= 8)
+                return 2;
+            
+            if(glm::length(corner2) > 4000)
+                return voxel::unknown_material;
+            
+        }
+        return 1;
     });
-    
-    (*c.begin()) = c.begin()->with_material(1);
-    
-    for(auto v : c) {
-        std::cout << v << "\n";
-    }
     
     c.mesh(octree::obj, output);
     
