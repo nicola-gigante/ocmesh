@@ -20,6 +20,7 @@
 #include <cassert>
 #include <vector>
 #include <random>
+#include <cmath>
 #include <limits>
 
 #include "csg.h"
@@ -27,6 +28,25 @@
 
 using namespace ocmesh;
 
+enum intersection_result {
+    inside,
+    outside,
+    intersect
+};
+
+intersection_result intersection(csg::object *obj, voxel v) {
+    glm::vec3 coordinates = glm::vec3(v.coordinates());
+    float side = v.size();
+    float diagonal = std::sqrt(3) * side;
+    
+    glm::vec3 center = coordinates + glm::vec3{ side / 2, side / 2, side / 2 };
+    
+    float d = obj->distance(center);
+    if(std::abs(d) < diagonal / 2 && v.level() <= 7)
+        return intersect;
+    
+    return d > 0 ? outside : inside;
+}
 
 int main(int argc, char *argv[])
 {
@@ -60,20 +80,19 @@ int main(int argc, char *argv[])
     
     octree c;
     
-    c.build([](voxel v) -> voxel::material_t {
-        auto corner1 = glm::f32vec3(v.coordinates());
-        auto corner2 = glm::f32vec3(v.corners()[7]);
-               
-        if(glm::length(corner1) <= 4000) {
-            if(glm::length(corner2) <= 4000 || v.level() >= 8)
-                return 2;
-            
-            if(glm::length(corner2) > 4000)
+    c.build([&](voxel v) -> voxel::material_t {
+        for(auto *obj : scene) {
+            intersection_result r = intersection(obj, v);
+            if(r == inside)
+                return obj->material();
+            if(r == intersect)
                 return voxel::unknown_material;
-            
         }
-        return 1;
+        
+        return voxel::void_material;
     });
+    
+    std::cout << "Octree built\n";
     
     c.mesh(octree::obj, output);
     

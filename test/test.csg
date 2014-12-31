@@ -3,14 +3,14 @@
 #
 
 # We can assign names to primitives and reuse them
-object base_sphere = sphere(20)
-object base_cube   = cube(20)
+object mysphere = sphere(4000)
+object mycube   = cube(4000)
 
-object mycup = intersect(base_sphere, base_cube)
+object obj = intersect(mysphere, mycube)
 
 # Materials have to be declared
 material metal
 
 # mycup is declared as one of the final objects of the scene,
 # so we must set the material
-build mycup metal
+build obj metal
