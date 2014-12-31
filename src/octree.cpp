@@ -55,8 +55,7 @@ namespace details {
             {
                 auto children = v.children();
                 _data[i] = children[0];
-                _data.insert(_data.end(),
-                             children.begin() + 1, children.end());
+                _data.insert(_data.end(), children.begin() + 1, children.end());
                 --i; // Decrement i to continue from this same voxel
             } else {
                 _data[i] = _data[i].with_material(material);

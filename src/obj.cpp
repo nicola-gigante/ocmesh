@@ -119,17 +119,11 @@ namespace details {
     {
     public:
         void cube(voxel v) {
-            std::array<glm::u16vec3, 8> c = v.corners();
+            auto c = v.corners<glm::vec3>();
             
             _indexes.push_back(_vertices.size());
             
-            auto cast = [](glm::u16vec3 v) {
-                return glm::f32vec3(v);
-            };
-            
-            std::copy(utils::make_map_iterator(c.begin(), cast),
-                      utils::make_map_iterator(c.end(), cast),
-                      std::back_inserter(_vertices));
+            _vertices.insert(_vertices.end(), begin(c), end(c));
         }
         
         void write(std::ostream &os) const {
@@ -156,10 +150,8 @@ namespace details {
         }
         
     private:
-        std::vector<glm::f32vec3> _vertices;
+        std::vector<glm::vec3> _vertices;
         std::vector<size_t> _indexes;
-
-        
     };
     
     void obj_mesh(octree const&oc, std::ostream &out)
@@ -167,7 +159,7 @@ namespace details {
         obj o;
         for(voxel v : oc) {
             assert(v.material() != voxel::unknown_material);
-            if(v.material() != 1) // Transparent air
+            if(v.material() != voxel::void_material)
                 o.cube(v);
         }
         

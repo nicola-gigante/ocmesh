@@ -54,6 +54,7 @@ public:
     using material_t = uint32_t;
     
     static constexpr material_t unknown_material = 0;
+    static constexpr material_t void_material = 1;
     
     static constexpr size_t precision     = 13;
     static constexpr size_t location_bits = precision * 3;
@@ -193,7 +194,8 @@ public:
      * corners of the voxel. The coordinates are still expressed in the
      * virtual, unsigned integer coordinate space of the voxel
      */
-    std::array<glm::u16vec3, 8> corners() const;
+    template<typename Vec = glm::u16vec3>
+    std::array<Vec, 8> corners() const;
     
     /*
      * Get the children of the voxel, in Morton order.
@@ -265,22 +267,22 @@ std::array<voxel, 8> voxel::children() const
  * in morton order, which in turn is reflected also by the order of the
  * voxel::corner enumeration
  */
+template<typename Vec>
 inline
-std::array<glm::u16vec3, 8> voxel::corners() const
+std::array<Vec, 8> voxel::corners() const
 {
-    using vec = glm::u16vec3;
-    glm::u16vec3 c = coordinates();
+    Vec c = Vec(coordinates());
     uint16_t edge = size();
         
     return {
         c,
-        c + vec{ edge,    0,    0 },
-        c + vec{    0, edge,    0 },
-        c + vec{ edge, edge,    0 },
-        c + vec{    0,    0, edge },
-        c + vec{ edge,    0, edge },
-        c + vec{    0, edge, edge },
-        c + vec{ edge, edge, edge }
+        c + Vec{ edge,    0,    0 },
+        c + Vec{    0, edge,    0 },
+        c + Vec{ edge, edge,    0 },
+        c + Vec{    0,    0, edge },
+        c + Vec{ edge,    0, edge },
+        c + Vec{    0, edge, edge },
+        c + Vec{ edge, edge, edge }
     };
 }
     

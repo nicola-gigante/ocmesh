@@ -264,8 +264,6 @@ namespace details {
         
         object *parsePrimitive()
         {
-            using namespace std::placeholders;
-            
             static const
             std::map<std::string, std::function<object *(float)>> primitives = {
                 { "cube"  , [this](float x) { return _scene->cube(x);   } },
@@ -305,7 +303,7 @@ namespace details {
             
             assert(binaries.find(name) != binaries.end());
             
-            return binaries.at(name)(std::move(lhs), std::move(rhs));
+            return binaries.at(name)(lhs, rhs);
         }
         
         void parseMaterial() {
@@ -343,7 +341,7 @@ namespace details {
         token _current;
         std::map<std::string, object *> _bindings;
         std::map<std::string, voxel::material_t> _materials;
-        voxel::material_t _last_material = 0;
+        voxel::material_t _last_material = voxel::void_material;
     };
     
     void scene::parse(std::istream &stream)

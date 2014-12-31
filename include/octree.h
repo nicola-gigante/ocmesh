@@ -25,7 +25,7 @@
 
 namespace ocmesh {
 namespace details {
-
+    
 class octree
 {
     using container_t = std::deque<voxel>;
@@ -87,16 +87,15 @@ public:
     
     /*
      * This is the main function to recursively build an octree with a given
-     * splitting rule. The octree is built in a by applying the predicate
+     * splitting rule. The octree is built by applying the predicate
      * to each voxel to determine if it has to be split.
      *
      * The argument must be a function that given a voxel will return its
      * material. If the function returns voxel::unknown_material, the voxel
-     * will be splitted and its children recursively examinated.
+     * will be split and its children recursively examinated.
      *
-     * Otherwise, if the function returns voxel::void_material or any material
-     * value, then the material will be set to the voxel and the voxel will 
-     * be definitely added to the octree.
+     * Otherwise, if the function returns any material value, then the material
+     * will be set to the voxel, which will be definitely added to the octree.
      *
      * Note: during the execution of this function, the octree is in an
      * inconsistent state. This means that the testing function should only
