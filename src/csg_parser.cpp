@@ -15,6 +15,7 @@
  */
 
 #include "utils/support.h"
+#include "utils/string_switch.h"
 
 #include "csg.h"
 #include "voxel.h"
@@ -27,6 +28,8 @@
 
 namespace ocmesh {
 namespace details {
+    
+    using namespace utils::literals;
     
     class token
     {
@@ -96,39 +99,35 @@ namespace details {
         }
     }
     
-    token::kind_t find_keyword(std::string const&s) {
-        static const std::map<std::string, token::kind_t> keywords = {
-            { "object"    , token::object    },
-            { "material"  , token::material  },
-            { "build"     , token::build     },
-            
-            { "sphere"    , token::primitive },
-            { "cube"      , token::primitive },
-            
-            { "unite"     , token::binary    },
-            { "intersect" , token::binary    },
-            { "subtract"  , token::binary    },
-            
-            { "transform" , token::transform },
-            { "scale"     , token::transform },
-            { "xscale"    , token::transform },
-            { "yscale"    , token::transform },
-            { "zscale"    , token::transform },
-            { "rotate"    , token::transform },
-            { "xrotate"   , token::transform },
-            { "yrotate"   , token::transform },
-            { "zrotate"   , token::transform },
-            { "translate" , token::transform },
-            { "xtranslate", token::transform },
-            { "ytranslate", token::transform },
-            { "ztranslate", token::transform }
-        };
-        
-        auto it = keywords.find(s);
-        if(it != keywords.end())
-            return it->second;
-        
-        return token::identifier;
+    token::kind_t find_keyword(std::string const&s)
+    {
+        switch (utils::str_switch(s)) {
+            case "object"_match:
+                return token::object;
+            case "material"_match:
+                return token::material;
+            case "build"_match:
+                return token::build;
+            case "sphere"_match:
+            case "cube"_match:
+                return token::primitive;
+            case "transform"_match:
+            case "scale"_match:
+            case "xscale"_match:
+            case "yscale"_match:
+            case "zscale"_match:
+            case "rotate"_match:
+            case "xrotate"_match:
+            case "yrotate"_match:
+            case "zrotate"_match:
+            case "translate"_match:
+            case "xtranslate"_match:
+            case "ytranslate"_match:
+            case "ztranslate"_match:
+                return token::transform;
+            default:
+                return token::identifier;
+        }
     }
     
     token lex(std::istream &stream)
@@ -245,7 +244,7 @@ namespace details {
                 case token::binary:
                     return parseBinary();
                 case token::transform:
-                    return { };
+                    return parseTransform();
                 default:
                     code_unreachable();
             }
@@ -264,12 +263,6 @@ namespace details {
         
         object *parsePrimitive()
         {
-            static const
-            std::map<std::string, std::function<object *(float)>> primitives = {
-                { "cube"  , [this](float x) { return _scene->cube(x);   } },
-                { "sphere", [this](float x) { return _scene->sphere(x); } }
-            };
-            
             assert(_current.is(token::primitive));
             
             std::string name = _current.text();
@@ -277,20 +270,18 @@ namespace details {
             float argument = lex(token::number).value();
             lex(token::rparen);
             
-            assert(primitives.find(name) != primitives.end());
-            
-            return primitives.at(name)(argument);
+            switch (utils::str_switch(name)) {
+                case "cube"_match:
+                    return _scene->cube(argument);
+                case "sphere"_match:
+                    return _scene->sphere(argument);
+                default:
+                    code_unreachable();
+            }
         }
         
         object *parseBinary()
         {
-            static const
-            std::map<std::string, object *(*)(object *, object *)> binaries = {
-                { "unite"    , &csg::unite     },
-                { "intersect", &csg::intersect },
-                { "subtract" , &csg::subtract  }
-            };
-            
             assert(_current.is(token::binary));
             
             std::string name = _current.text();
@@ -301,9 +292,16 @@ namespace details {
             object *rhs = parseObjectExpression();
             lex(token::rparen);
             
-            assert(binaries.find(name) != binaries.end());
-            
-            return binaries.at(name)(lhs, rhs);
+            switch (utils::str_switch(name)) {
+                case "unite"_match:
+                    return csg::unite(lhs, rhs);
+                case "intersect"_match:
+                    return csg::intersect(lhs, rhs);
+                case "subtract"_match:
+                    return csg::subtract(lhs, rhs);
+                default:
+                    code_unreachable();
+            }
         }
         
         void parseMaterial() {
@@ -327,6 +325,12 @@ namespace details {
             object *obj = _bindings[name];
             obj->scene()->toplevel(obj, _materials[material]);
         }
+        
+        object *parseTransform() {
+            assert(_current.is(token::transform));
+            return nullptr;
+        }
+        
         
         [[noreturn]]
         void error() {
