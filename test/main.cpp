@@ -28,25 +28,7 @@
 
 using namespace ocmesh;
 
-enum intersection_result {
-    inside,
-    outside,
-    intersect
-};
 
-intersection_result intersection(csg::object *obj, voxel v) {
-    glm::vec3 coordinates = glm::vec3(v.coordinates());
-    float side = v.size();
-    float diagonal = std::sqrt(3) * side;
-    
-    glm::vec3 center = coordinates + glm::vec3{ side / 2, side / 2, side / 2 };
-    
-    float d = obj->distance(center);
-    if(std::abs(d) < diagonal / 2 && v.level() <= 7)
-        return intersect;
-    
-    return d > 0 ? outside : inside;
-}
 
 int main(int argc, char *argv[])
 {
@@ -81,22 +63,11 @@ int main(int argc, char *argv[])
         return 4;
     }
     
-    std::cout << "Scene: \n";
     std::cout << scene << "\n";
     
     octree c;
     
-    c.build([&](voxel v) -> voxel::material_t {
-        for(auto *obj : scene) {
-            intersection_result r = intersection(obj, v);
-            if(r == inside)
-                return obj->material();
-            if(r == intersect)
-                return voxel::unknown_material;
-        }
-        
-        return voxel::void_material;
-    });
+    c.build(scene, 0.01);
     
     std::cout << "Octree built\n";
     

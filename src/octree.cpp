@@ -68,5 +68,74 @@ namespace details {
         
         std::sort(_data.begin(), _data.end());
     }
+    
+    
+    /*
+     * Function object for the subdivision of the octree from the CSG scene.
+     */
+    class scene_builder
+    {
+    public:
+        scene_builder(csg::scene const&scene, float precision)
+            : _scene(scene), _bounding_box(_scene.bounding_box()),
+              _precision(precision) { }
+        
+        
+        voxel::material_t operator()(voxel v) const {
+            for(auto *obj : _scene) {
+                intersection_result r = intersection(obj, v);
+                if(r == inside)
+                    return obj->material();
+                if(r == at_intersection)
+                    return voxel::unknown_material;
+            }
+            
+            return voxel::void_material;
+        }
+        
+    private:
+        enum intersection_result {
+            inside,
+            outside,
+            at_intersection
+        };
+        
+        /*
+         * The core function of the subdivision procedure is here. It decides
+         * if a voxel intersects a given CSG object or not.
+         */
+        intersection_result intersection(csg::object *obj, voxel v) const
+        {
+            glm::vec3 coordinates = glm::vec3(v.coordinates());
+            float side = v.size();
+            
+            // Scale the voxel to the scene bounding box
+            float scale = _bounding_box.side() / voxel::max_coordinate;
+            coordinates = coordinates * scale + _bounding_box.min();
+            side *= scale;
+            
+            glm::vec3 center = coordinates + glm::vec3{ side / 2, side / 2, side / 2 };
+            float diagonal = std::sqrt(3) * side;
+            
+            float d = obj->distance(center);
+            if(std::abs(d) < diagonal / 2 &&
+               side >= _bounding_box.side() * _precision)
+            {
+                return at_intersection;
+            }
+            
+            return d > 0 ? outside : inside;
+        }
+        
+    private:
+        csg::scene const&_scene;
+        csg::bounding_box _bounding_box;
+        float _precision;
+    };
+    
+    void octree::build(csg::scene const&scene, float precision) {
+        build(scene_builder(scene, precision));
+    }
+    
 } // namespace details
 } // namespace ocmesh

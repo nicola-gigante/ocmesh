@@ -26,6 +26,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/extented_min_max.hpp>
 
 #pragma clang diagnostic pop
 

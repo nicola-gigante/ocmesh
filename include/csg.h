@@ -33,7 +33,7 @@ namespace details {
     
     class scene;
     
-    struct bounding_box;
+    class bounding_box;
     
     /*
      * Root class of the CSG nodes hierarchy
@@ -49,7 +49,7 @@ namespace details {
         class scene *scene() const { return _scene; }
         
         virtual float distance(glm::vec3 const& from) = 0;
-        virtual struct bounding_box bounding_box() const = 0;
+        virtual class bounding_box bounding_box() const = 0;
         
         virtual void dump(std::ostream &) const = 0;
     };
@@ -68,7 +68,7 @@ namespace details {
         float radius() const { return _radius; }
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -84,7 +84,7 @@ namespace details {
         float side() const { return _side; }
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -106,18 +106,30 @@ namespace details {
         voxel::material_t material() const { return _material; }
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
     
-    struct bounding_box
+    class bounding_box
     {
-        glm::vec3 min;
-        glm::vec3 max;
+        glm::vec3 _min;
+        float _side;
 
+        float cube_side(glm::vec3 min, glm::vec3 max) {
+            glm::vec3 sides = max - min;
+            
+            return glm::max(sides.x, sides.y, sides.z);
+        }
+        
+    public:
+        bounding_box(glm::vec3 min, float side) : _min(min), _side(side) { }
         bounding_box(glm::vec3 min, glm::vec3 max)
-            : min(min), max(max) { }
+            : _min(min), _side(cube_side(min, max)) { }
+        
+        glm::vec3 min() const { return _min; }
+        glm::vec3 max() const { return _min + glm::vec3{ _side, _side, _side }; }
+        float side() const { return _side; }
     };
     
     /*
@@ -166,7 +178,7 @@ namespace details {
         /*
          * Compute the bounding box of the entire scene
          */
-        struct bounding_box bounding_box() const;
+        class bounding_box bounding_box() const;
         
         /*
          * Function to fill the scene by parsing an input file
@@ -268,7 +280,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -278,7 +290,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -288,7 +300,7 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -311,7 +323,7 @@ namespace details {
         glm::mat4 const&world_to_object() const { return _world_to_object; }
         
         float distance(glm::vec3 const& from) override;
-        struct bounding_box bounding_box() const override;
+        class bounding_box bounding_box() const override;
         
         void dump(std::ostream &) const override;
     };
@@ -427,6 +439,7 @@ namespace details {
 namespace csg {
     using details::object;
     using details::scene;
+    using details::bounding_box;
     
     using details::unite;
     using details::intersect;

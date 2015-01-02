@@ -82,7 +82,7 @@ namespace ocmesh {
         {
             return std::accumulate(begin() + 1, end(),
                                    (*begin())->bounding_box(),
-               [](struct bounding_box bb, object *obj2) {
+               [](class bounding_box bb, object *obj2) {
                    return bb + obj2->bounding_box();
                });
         }
@@ -117,14 +117,14 @@ namespace ocmesh {
          */
         bounding_box operator+(bounding_box const&bb1, bounding_box const&bb2) {
             return {
-                cmin(bb1.min, bb2.min),
-                cmax(bb1.max, bb2.max)
+                cmin(bb1.min(), bb2.min()),
+                cmax(bb1.max(), bb2.max())
             };
         }
         
         std::ostream &operator<<(std::ostream &s, bounding_box const&bb) {
-            s << "{" << bb.min.x << ", " << bb.min.y << ", " << bb.min.z << "} - ";
-            s << "{" << bb.max.x << ", " << bb.max.y << ", " << bb.max.z << "}";
+            s << "{" << bb.min().x << ", " << bb.min().y << ", " << bb.min().z << "} - ";
+            s << "{" << bb.max().x << ", " << bb.max().y << ", " << bb.max().z << "}";
             return s;
         }
         
@@ -191,14 +191,14 @@ namespace ocmesh {
             auto bb = _child->bounding_box();
             auto transform = object_to_world();
             
-            auto xmin = glm::column(transform, 0).xyz() * bb.min.x;
-            auto xmax = glm::column(transform, 0).xyz() * bb.max.x;
+            auto xmin = glm::column(transform, 0).xyz() * bb.min().x;
+            auto xmax = glm::column(transform, 0).xyz() * bb.max().x;
             
-            auto ymin = glm::column(transform, 1).xyz() * bb.min.y;
-            auto ymax = glm::column(transform, 1).xyz() * bb.max.y;
+            auto ymin = glm::column(transform, 1).xyz() * bb.min().y;
+            auto ymax = glm::column(transform, 1).xyz() * bb.max().y;
             
-            auto zmin = glm::column(transform, 2).xyz() * bb.min.z;
-            auto zmax = glm::column(transform, 2).xyz() * bb.max.z;
+            auto zmin = glm::column(transform, 2).xyz() * bb.min().z;
+            auto zmax = glm::column(transform, 2).xyz() * bb.max().z;
             
             auto offset = glm::column(transform, 3).xyz();
             

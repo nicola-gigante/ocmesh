@@ -4,10 +4,10 @@
 
 # We can assign names to primitives and reuse them
 
-object obj1 = translate({1000, 2000, 1000}, sphere(1000))
-object obj2 = translate({1000, 1000, 1000}, cube(2000))
+object obj1 = translate({100, 200, 100}, sphere(100))
+object obj2 = translate({100, 100, 100}, cube(200))
 
-object result = unite(obj1, obj2)
+object result = unite(obj2, obj1)
 
 # Materials have to be declared
 material metal

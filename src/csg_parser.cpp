@@ -439,13 +439,15 @@ namespace details {
         object *parse_single_component_transform() {
             assert(_current.is(token::transform));
             
+            std::string name = _current.text();
+
             lex(token::lparen);
             float argument = lex(token::number).value();
             lex(token::comma);
             object *obj = parse_object_expression();
             lex(token::rparen);
             
-            switch (utils::str_switch(_current.text())) {
+            switch (utils::str_switch(name)) {
                 case "xscale"_match:
                     return csg::xscale(obj, argument);
                 case "yscale"_match:

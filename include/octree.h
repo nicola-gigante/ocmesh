@@ -18,6 +18,7 @@
 #ifndef OCMESH_OCTREE_H__
 #define OCMESH_OCTREE_H__
 
+#include "csg.h"
 #include "voxel.h"
 #include "glm.h"
 
@@ -44,19 +45,11 @@ public:
     
 public:
     octree() = default;
-    octree(glm::f32mat4 transform) : _transform(transform) { }
     octree(octree const&) = default;
     octree(octree     &&) = default;
     
     octree &operator=(octree const&) = default;
     octree &operator=(octree     &&) = default;
-    
-    /*
-     * Returns the transform used to determine size and position of the octree
-     * in the 3D space.
-     */
-    glm::f32mat4  transform() const { return _transform; }
-    glm::f32mat4 &transform()       { return _transform; }
     
     /*
      * We expose the voxels in their natural order
@@ -101,7 +94,14 @@ public:
      * inconsistent state. This means that the testing function should only
      * use the given voxel and avoid to use the octree in any other way.
      */
-    void build(std::function<voxel::material_t(voxel)> split_function);
+    using split_function_t = std::function<voxel::material_t(voxel)>;
+    void build(split_function_t split_function);
+    
+    /*
+     * Version to directly build the octree from a CSG scene.
+     * The precision is a percentage of the size of the scene's bounding box
+     */
+    void build(csg::scene const&scene, float precision);
     
     /*
      * Different mesh formats supported by the mesh() function
