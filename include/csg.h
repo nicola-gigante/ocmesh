@@ -23,6 +23,7 @@
 #include <std14/memory>
 #include <iterator>
 #include <istream>
+#include <ostream>
 #include <vector>
 #include <deque>
 
@@ -31,6 +32,8 @@ namespace ocmesh {
 namespace details {
     
     class scene;
+    
+    struct bounding_box;
     
     /*
      * Root class of the CSG nodes hierarchy
@@ -46,6 +49,8 @@ namespace details {
         class scene *scene() const { return _scene; }
         
         virtual float distance(glm::vec3 const& from) = 0;
+        virtual struct bounding_box bounding_box() const = 0;
+        
         virtual void dump(std::ostream &) const = 0;
     };
 
@@ -63,6 +68,8 @@ namespace details {
         float radius() const { return _radius; }
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
@@ -77,6 +84,8 @@ namespace details {
         float side() const { return _side; }
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
@@ -97,8 +106,26 @@ namespace details {
         voxel::material_t material() const { return _material; }
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
+    
+    struct bounding_box
+    {
+        glm::vec3 min;
+        glm::vec3 max;
+
+        bounding_box(glm::vec3 min, glm::vec3 max)
+            : min(min), max(max) { }
+    };
+    
+    /*
+     * Operator + computes the union of the two bounding boxes
+     */
+    bounding_box operator+(bounding_box const&, bounding_box const&);
+    
+    std::ostream &operator<<(std::ostream &, bounding_box const&);
     
     /*
      * Class that owns all the objects of the scene
@@ -136,11 +163,15 @@ namespace details {
             _toplevels.push_back(make<toplevel_t>(obj, material));
         }
         
-        class parse_result;
+        /*
+         * Compute the bounding box of the entire scene
+         */
+        struct bounding_box bounding_box() const;
         
         /*
          * Function to fill the scene by parsing an input file
          */
+        class parse_result;
         parse_result parse(std::istream &);
         
         /*
@@ -155,10 +186,13 @@ namespace details {
         }
         
         friend std::ostream &operator<<(std::ostream &s, scene const&scene) {
+            s << "Scene: \n";
             for(auto t : scene._toplevels) {
                 t->dump(s);
                 s << "\n";
             }
+            s << "Bounding box: ";
+            s << scene.bounding_box() << "\n";
             return s;
         }
         
@@ -234,6 +268,8 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
@@ -242,6 +278,8 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
@@ -250,23 +288,31 @@ namespace details {
         using binary_operation_t::binary_operation_t;
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
     class transform_t : public object
     {
         object *_child;
-        glm::mat4 _transform;
+        glm::mat4 _object_to_world;
+        glm::mat4 _world_to_object;
         
     public:
         transform_t(class scene *scene,
-                    object *child, glm::mat4 const&transform)
-        : object(scene), _child(child), _transform(transform) { }
+                    object *child, glm::mat4 const&object_to_world)
+        : object(scene), _child(child),
+          _object_to_world(object_to_world),
+          _world_to_object(glm::inverse(object_to_world)) { }
         
         object *child() const { return _child; }
-        glm::mat4 const&transform() const { return _transform; }
+        glm::mat4 const&object_to_world() const { return _object_to_world; }
+        glm::mat4 const&world_to_object() const { return _world_to_object; }
         
         float distance(glm::vec3 const& from) override;
+        struct bounding_box bounding_box() const override;
+        
         void dump(std::ostream &) const override;
     };
     
@@ -287,7 +333,7 @@ namespace details {
     
     template<typename ...Args>
     inline object *unite(object *node, Args&& ...args) {
-        return unite(std::move(node), unite(std::forward<Args>(args)...));
+        return unite(node, unite(std::forward<Args>(args)...));
     }
     
     inline object *subtract(object *left, object *right) {
@@ -311,75 +357,70 @@ namespace details {
      */
     template<typename ...Args>
     inline object *intersect(object *node, Args&& ...args) {
-        return intersect(std::move(node),
-                         unite(std::forward<Args>(args)...));
+        return intersect(node, intersect(std::forward<Args>(args)...));
     }
-    
-    
     
     template<typename ...Args>
     inline object *subtract(object *node, Args&& ...args) {
-        return subtract(std::move(node),
-                        unite(std::forward<Args>(args)...));
+        return subtract(node, subtract(std::forward<Args>(args)...));
     }
     
     inline object *scale(object *node, glm::vec3 const&factors) {
         assert(glm::all(glm::notEqual(factors, {})) &&
                "Scaling factor components must be non-zero");
-        return transform(std::move(node),
-                         glm::scale(glm::vec3(1, 1, 1) / factors));
+        return transform(node, glm::scale(factors));
     }
     
     inline object *scale(object *node, float factor) {
         assert(factor != 0 && "Scaling factor must be non-zero");
-        return scale(std::move(node), { factor, factor, factor });
+        return scale(node, { factor, factor, factor });
     }
     
     inline object *xscale(object *node, float factor) {
         assert(factor != 0 && "Scaling factor must be non-zero");
-        return scale(std::move(node), {factor, 1, 1});
+        return scale(node, {factor, 1, 1});
     }
     
     inline object *yscale(object *node, float factor) {
         assert(factor != 0 && "Scaling factor must be non-zero");
-        return scale(std::move(node), {1, factor, 1});
+        return scale(node, {1, factor, 1});
     }
     
     inline object *zscale(object *node, float factor) {
         assert(factor != 0 && "Scaling factor must be non-zero");
-        return scale(std::move(node), {1, 1, factor});
+        return scale(node, {1, 1, factor});
     }
     
     inline object *rotate(object *node, float angle, glm::vec3 const&axis) {
-        return transform(std::move(node), glm::rotate(-angle, axis));
+        return transform(node, glm::rotate(angle, axis));
     }
     
     inline object *xrotate(object *node, float angle) {
-        return rotate(std::move(node), angle, {1, 0, 0});
+        return rotate(node, angle, {1, 0, 0});
     }
     
     inline object *yrotate(object *node, float angle) {
-        return rotate(std::move(node), angle, {0, 1, 0});
+        return rotate(node, angle, {0, 1, 0});
     }
     
     inline object *zrotate(object *node, float angle) {
-        return rotate(std::move(node), angle, {0, 0, 1});
+        return rotate(node, angle, {0, 0, 1});
     }
     
     inline object *translate(object *node, glm::vec3 const&offsets) {
-        return transform(std::move(node), glm::translate(-offsets));
+        return transform(node, glm::translate(offsets));
     }
     
     inline object *xtranslate(object *node, float offset) {
-        return translate(std::move(node), {offset, 0, 0});
+        return translate(node, {offset, 0, 0});
     }
     
     inline object *ytranslate(object *node, float offset) {
-        return translate(std::move(node), {0, offset, 0});
+        return translate(node, {0, offset, 0});
     }
     
     inline object *ztranslate(object *node, float offset) {
-        return translate(std::move(node), {0, 0, offset});
+        return translate(node, {0, 0, offset});
     }
 } // namespace details
 

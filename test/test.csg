@@ -14,4 +14,4 @@ material metal
 
 # mycup is declared as one of the final objects of the scene,
 # so we must set the material
-build result metal
+build metal result

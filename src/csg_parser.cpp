@@ -337,15 +337,13 @@ namespace details {
         void parse_build_directive() {
             assert(_current.is(token::build));
             
-            std::string name = lex(token::identifier).text();
             std::string material = lex(token::identifier).text();
             
-            if(_bindings.find(name) == _bindings.end())
-                error("Use of undeclared object identifier '", name, "'");
             if(_materials.find(material) == _materials.end())
-                error("Use of undeclared material identifier '", name, "'");
+                error("Use of undeclared material identifier '", material, "'");
             
-            object *obj = _bindings[name];
+            object *obj = parse_object_expression();
+            
             obj->scene()->toplevel(obj, _materials[material]);
         }
         
