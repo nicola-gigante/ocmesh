@@ -74,7 +74,12 @@ int main(int argc, char *argv[])
     
     csg::scene scene;
     
-    scene.parse(input);
+    auto result = scene.parse(input);
+    
+    if(!result) {
+        std::cerr << result.error() << "\n";
+        return 4;
+    }
     
     std::cout << scene << "\n";
     

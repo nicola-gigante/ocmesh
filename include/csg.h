@@ -136,10 +136,12 @@ namespace details {
             _toplevels.push_back(make<toplevel_t>(obj, material));
         }
         
+        class parse_result;
+        
         /*
          * Function to fill the scene by parsing an input file
          */
-        void parse(std::istream &);
+        parse_result parse(std::istream &);
         
         /*
          * Primitives
@@ -190,8 +192,24 @@ namespace details {
         container_t<std::unique_ptr<object>> _objects;
         container_t<toplevel_t *> _toplevels;
     };
+
+    class scene::parse_result
+    {
+        bool _ok = true;
+        std::string _error;
+        
+    public:
+        parse_result() = default;
+        
+        parse_result(bool ok, std::string error)
+            : _ok(ok), _error(std::move(error)) { }
+        
+        bool ok() const { return _ok; }
+        
+        explicit operator bool() const { return _ok; }
     
-    std::vector<object *> parse(std::istream &s);
+        std::string const&error() const { return _error; }
+    };
     
     /*
      * Classes representing CSG nodes
@@ -368,8 +386,6 @@ namespace details {
 namespace csg {
     using details::object;
     using details::scene;
-    
-    using details::parse;
     
     using details::unite;
     using details::intersect;

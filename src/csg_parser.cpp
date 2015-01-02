@@ -24,6 +24,7 @@
 #include <map>
 #include <cctype>
 #include <functional>
+#include <sstream>
 
 
 namespace ocmesh {
@@ -44,6 +45,8 @@ namespace details {
             // Punctuation
             lparen,
             rparen,
+            lbrace,
+            rbrace,
             semicolon,
             comma,
             equals,
@@ -62,7 +65,8 @@ namespace details {
         token(kind_t kind, std::string text = std::string{})
             : _kind(kind), _text(std::move(text)) { }
         
-        explicit token(float value) : _kind(number), _value(value) { }
+        explicit token(float value)
+            : _kind(number), _text(std::to_string(value)), _value(value) { }
         
         kind_t kind() const { return _kind; }
         
@@ -111,7 +115,10 @@ namespace details {
             case "sphere"_match:
             case "cube"_match:
                 return token::primitive;
-            case "transform"_match:
+            case "unite"_match:
+            case "subtract"_match:
+            case "intersect"_match:
+                return token::binary;
             case "scale"_match:
             case "xscale"_match:
             case "yscale"_match:
@@ -146,19 +153,25 @@ namespace details {
         switch (c) {
             case '(':
                 stream.get();
-                return token::lparen;
+                return token(token::lparen, "(");
             case ')':
                 stream.get();
-                return token::rparen;
+                return token(token::rparen, ")");
+            case '{':
+                stream.get();
+                return token(token::lbrace, "{");
+            case '}':
+                stream.get();
+                return token(token::rbrace, "}");
             case ';':
                 stream.get();
-                return token::semicolon;
+                return token(token::semicolon, ";");
             case ',':
                 stream.get();
-                return token::comma;
+                return token(token::comma, ",");
             case '=':
                 stream.get();
-                return token::equals;
+                return token(token::equals, "=");
         }
         
         // Lex numbers
@@ -185,6 +198,14 @@ namespace details {
     
     class parser
     {
+        scene *_scene;
+        std::istream &_stream;
+        
+        token _current;
+        std::map<std::string, object *> _bindings;
+        std::map<std::string, voxel::material_t> _materials;
+        voxel::material_t _last_material = voxel::void_material;
+        
     public:
         parser(scene *scene, std::istream &stream)
             : _scene(scene), _stream(stream) { }
@@ -192,7 +213,7 @@ namespace details {
         void parse()
         {
             while(lex().kind() != token::eof)
-                parseStatement();
+                parse_statement();
         }
         
     private:
@@ -203,65 +224,67 @@ namespace details {
         template<typename ...Args, REQUIRES(sizeof...(Args) > 0)>
         token lex(Args ...args) {
             lex();
-            if(! _current.is(args...))
-                error();
+            if(! _current.is(args...)) {
+                error("Syntax error: unexpected token '", _current.text(), "'");
+            }
             return _current;
         }
         
-        void parseStatement() {
+        void parse_statement()
+        {
             switch(_current.kind()) {
                 case token::object:
-                    return parseObject();
+                    return parse_object();
                 case token::material:
-                    return parseMaterial();
+                    return parse_material();
                 case token::build:
-                    return parseBuildDirective();
+                    return parse_build_directive();
                 default:
-                    error();
+                    code_unreachable();
             }
         }
         
-        void parseObject() {
+        void parse_object() {
             assert(_current.kind() == token::object);
             
             std::string name = lex(token::identifier).text();
 
             lex(token::equals);
             
-            _bindings[name] = parseObjectExpression();
+            _bindings[name] = parse_object_expression();
         }
         
-        object *parseObjectExpression()
+        object *parse_object_expression()
         {
             lex(token::identifier, token::primitive,
                 token::binary, token::transform);
             
             switch (_current.kind()) {
                 case token::identifier:
-                    return parseVariableReference();
+                    return parse_variable_reference();
                 case token::primitive:
-                    return parsePrimitive();
+                    return parse_primitive();
                 case token::binary:
-                    return parseBinary();
+                    return parse_binary();
                 case token::transform:
-                    return parseTransform();
+                    return parse_transform();
                 default:
                     code_unreachable();
             }
         }
         
-        object *parseVariableReference() {
+        object *parse_variable_reference() {
             assert(_current.is(token::identifier));
             
             std::string name = _current.text();
             
             if(_bindings.find(name) == _bindings.end())
-                error();
+                error("Use of undeclared object identifier '", name, "'");
             
             return _bindings[name];
         }
         
-        object *parsePrimitive()
+        object *parse_primitive()
         {
             assert(_current.is(token::primitive));
             
@@ -280,16 +303,16 @@ namespace details {
             }
         }
         
-        object *parseBinary()
+        object *parse_binary()
         {
             assert(_current.is(token::binary));
             
             std::string name = _current.text();
             
             lex(token::lparen);
-            object *lhs = parseObjectExpression();
+            object *lhs = parse_object_expression();
             lex(token::comma);
-            object *rhs = parseObjectExpression();
+            object *rhs = parse_object_expression();
             lex(token::rparen);
             
             switch (utils::str_switch(name)) {
@@ -304,53 +327,179 @@ namespace details {
             }
         }
         
-        void parseMaterial() {
+        void parse_material() {
             assert(_current.is(token::material));
 
             lex(token::identifier);
             _materials[_current.text()] = ++_last_material;
         }
         
-        void parseBuildDirective() {
+        void parse_build_directive() {
             assert(_current.is(token::build));
             
             std::string name = lex(token::identifier).text();
             std::string material = lex(token::identifier).text();
             
             if(_bindings.find(name) == _bindings.end())
-                error();
+                error("Use of undeclared object identifier '", name, "'");
             if(_materials.find(material) == _materials.end())
-                error();
+                error("Use of undeclared material identifier '", name, "'");
             
             object *obj = _bindings[name];
             obj->scene()->toplevel(obj, _materials[material]);
         }
         
-        object *parseTransform() {
+        object *parse_transform() {
             assert(_current.is(token::transform));
-            return nullptr;
+            
+            switch(utils::str_switch(_current.text())) {
+                case "scale"_match:
+                    return parse_scale();
+                case "rotate"_match:
+                    return parse_rotate();
+                case "translate"_match:
+                    return parse_translate();
+                default:
+                    return parse_single_component_transform();
+            }
         }
         
+        glm::vec3 parse_3d_vector(bool consume_brace)
+        {
+            if(consume_brace)
+                lex(token::lbrace);
+            
+            assert(_current.is(token::lbrace));
+            
+            glm::vec3 v;
+
+            v.x = lex(token::number).value();
+            lex(token::comma);
+            
+            v.y = lex(token::number).value();
+            lex(token::comma);
+            
+            v.z = lex(token::number).value();
+            lex(token::rbrace);
+            
+            return v;
+        }
         
+        object *parse_scale()
+        {
+            lex(token::lparen);
+            lex(token::lbrace, token::number);
+            
+            switch (_current.kind()) {
+                case token::number: {
+                    float f = _current.value();
+                    lex(token::comma);
+                    object *obj = parse_object_expression();
+                    lex(token::rparen);
+
+                    return csg::scale(obj, f);
+                }
+                case token::lbrace: {
+                    glm::vec3 factors = parse_3d_vector(false);
+                    lex(token::comma);
+                    object *obj = parse_object_expression();
+                    lex(token::rparen);
+                    
+                    return csg::scale(obj, factors);
+                }
+                default:
+                    code_unreachable();
+            }
+        }
+        
+        object *parse_rotate() {
+            lex(token::lparen);
+            
+            float angle = lex(token::number).value();
+            lex(token::comma);
+            
+            glm::vec3 axis = parse_3d_vector(true);
+            lex(token::comma);
+            
+            object *obj = parse_object_expression();
+            lex(token::rparen);
+            
+            return csg::rotate(obj, angle, axis);
+        }
+        
+        object *parse_translate() {
+            lex(token::lparen);
+            
+            glm::vec3 offsets = parse_3d_vector(true);
+            lex(token::comma);
+            object *obj = parse_object_expression();
+            lex(token::rparen);
+            
+            return csg::translate(obj, offsets);
+        }
+        
+        object *parse_single_component_transform() {
+            assert(_current.is(token::transform));
+            
+            lex(token::lparen);
+            float argument = lex(token::number).value();
+            lex(token::comma);
+            object *obj = parse_object_expression();
+            lex(token::rparen);
+            
+            switch (utils::str_switch(_current.text())) {
+                case "xscale"_match:
+                    return csg::xscale(obj, argument);
+                case "yscale"_match:
+                    return csg::yscale(obj, argument);
+                case "zscale"_match:
+                    return csg::zscale(obj, argument);
+                case "xrotate"_match:
+                    return csg::xrotate(obj, argument);
+                case "yrotate"_match:
+                    return csg::yrotate(obj, argument);
+                case "zrotate"_match:
+                    return csg::zrotate(obj, argument);
+                case "xtranslate"_match:
+                    return csg::xtranslate(obj, argument);
+                case "ytranslate"_match:
+                    return csg::ytranslate(obj, argument);
+                case "ztranslate"_match:
+                    return csg::ztranslate(obj, argument);
+                default:
+                    code_unreachable();
+            }
+        }
+        
+        void concatenate(std::ostream &) { }
+        
+        template<typename T, typename ...Args>
+        void concatenate(std::ostream &s, T&& v, Args&& ...args) {
+            s << std::forward<T>(v);
+            return concatenate(s, std::forward<Args>(args)...);
+        }
+        
+        template<typename ...Args>
         [[noreturn]]
-        void error() {
-            assert(!"Syntax error: Error handling unimplemented");
-            code_unreachable();
+        void error(Args&& ...args)
+        {
+            std::stringstream str;
+            
+            concatenate(str, std::forward<Args>(args)...);
+            
+            throw scene::parse_result(false, str.str());
         }
-        
-    private:
-        scene *_scene;
-        std::istream &_stream;
-        
-        token _current;
-        std::map<std::string, object *> _bindings;
-        std::map<std::string, voxel::material_t> _materials;
-        voxel::material_t _last_material = voxel::void_material;
     };
     
-    void scene::parse(std::istream &stream)
+    scene::parse_result scene::parse(std::istream &stream)
     {
-        parser(this, stream).parse();
+        try {
+            parser(this, stream).parse();
+        } catch(scene::parse_result r) {
+            return r;
+        }
+        
+        return { };
     }
     
 } // namespace details

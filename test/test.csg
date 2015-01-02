@@ -3,14 +3,15 @@
 #
 
 # We can assign names to primitives and reuse them
-object mysphere = sphere(4000)
-object mycube   = cube(4000)
 
-object obj = intersect(mysphere, mycube)
+object obj1 = translate({1000, 2000, 1000}, sphere(1000))
+object obj2 = translate({1000, 1000, 1000}, cube(2000))
+
+object result = unite(obj1, obj2)
 
 # Materials have to be declared
 material metal
 
 # mycup is declared as one of the final objects of the scene,
 # so we must set the material
-build obj metal
+build result metal
