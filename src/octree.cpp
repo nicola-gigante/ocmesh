@@ -22,7 +22,7 @@ namespace ocmesh {
 namespace details {
     
     octree::iterator
-    octree::neighbor(const_iterator node, voxel::direction d)
+    octree::neighbor(const_iterator node, voxel::face d)
     {
         voxel candidate = node->neighbor(d);
         
@@ -30,7 +30,7 @@ namespace details {
     }
     
     octree::const_iterator
-    octree::neighbor(const_iterator node, voxel::direction d) const
+    octree::neighbor(const_iterator node, voxel::face d) const
     {
         voxel candidate = node->neighbor(d);
         

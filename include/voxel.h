@@ -159,14 +159,14 @@ public:
     }
     
     /*
-     * Enumeration of possible directions of the neighbors of a voxel.
+     * Enumeration of possible faces of the cube.
      */
-    enum direction : uint8_t
+    enum face : uint8_t
     {
         left,
         right,
-        down,
-        up,
+        bottom,
+        top,
         back,
         front
     };
@@ -176,16 +176,17 @@ public:
      * the corners() function in this order. Note that this corresponds to
      * navigating corners in Morton order again
      */
-    enum corners : uint8_t
+    enum corner : uint8_t
     {
         left_bottom_back,    // (0,0,0)
         right_bottom_back,   // (1,0,0)
-        left_up_back,        // (0,1,0)
-        right_up_back,       // (1,1,0)
+        left_top_back,       // (0,1,0)
+        right_top_back,      // (1,1,0)
         left_bottom_front,   // (0,0,1)
         right_bottom_front,  // (1,0,1)
-        left_up_front,       // (0,1,1)
-        right_up_front       // (1,1,1)
+        left_top_front,      // (0,1,1)
+        right_top_front,     // (1,1,1)
+        last_corner = right_top_front
     };
     
     
@@ -213,7 +214,7 @@ public:
      * needed to find the actual neighbor by searching for its immediate 
      * ancestor in the octree.
      */
-    voxel neighbor(direction d) const;
+    voxel neighbor(face d) const;
     
     /*
      * Get all neighbors of the voxel
@@ -313,7 +314,7 @@ constexpr bool add_is_safe(uint16_t x, uint16_t y) {
  * In this case the function returns a void voxel.
  */
 inline
-voxel voxel::neighbor(direction d) const
+voxel voxel::neighbor(face d) const
 {
     /*
      * This will maybe be the most frequently called function in the entire
@@ -321,15 +322,15 @@ voxel voxel::neighbor(direction d) const
      * branches. Everything is computed in one linear flow control.
      */
     // First we choose if we need to add the size or subtract 1
-    bool add_size = d == right ||
-                    d == up    ||
+    bool add_size = d == right  ||
+                    d == top    ||
                     d == front;
     
     // Select the index of the coordinate to change.
     // Note: these ternary operators are probably not compiled as branches
     // TODO: Check the above statement
-    uint8_t index = d == left || d == right ? 0 :
-                    d == up   || d == down  ? 1 : 2 ;
+    uint8_t index = d == left || d == right  ? 0 :
+                    d == top  || d == bottom ? 1 : 2 ;
     
     // Get the coordinates of the voxel
     glm::u16vec3 coordinates = this->coordinates();

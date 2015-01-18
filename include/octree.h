@@ -75,8 +75,8 @@ public:
     /*
      * Finds neighbor of a node in a given direction
      */
-    iterator       neighbor(const_iterator node, voxel::direction d);
-    const_iterator neighbor(const_iterator node, voxel::direction d) const;
+    iterator       neighbor(const_iterator node, voxel::face d);
+    const_iterator neighbor(const_iterator node, voxel::face d) const;
     
     /*
      * This is the main function to recursively build an octree with a given
@@ -85,7 +85,7 @@ public:
      *
      * The argument must be a function that given a voxel will return its
      * material. If the function returns voxel::unknown_material, the voxel
-     * will be split and its children recursively examinated.
+     * will be split and its children recursively examined.
      *
      * Otherwise, if the function returns any material value, then the material
      * will be set to the voxel, which will be definitely added to the octree.

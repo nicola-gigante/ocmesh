@@ -51,26 +51,26 @@ namespace details {
         return {
             // Left face:   First triangle
             voxel::left,    voxel::right_bottom_front,
-                            voxel::right_up_front    ,
-                            voxel::left_up_front     ,
+                            voxel::right_top_front   ,
+                            voxel::left_top_front    ,
 
             //              Second triangle
                             voxel::right_bottom_front,
-                            voxel::left_up_front     ,
+                            voxel::left_top_front    ,
                             voxel::left_bottom_front ,
             
             // Right face:  First triangle
             voxel::right,   voxel::left_bottom_back  ,
-                            voxel::left_up_back      ,
-                            voxel::right_up_back     ,
+                            voxel::left_top_back     ,
+                            voxel::right_top_back    ,
             
             //              Second triangle
                             voxel::left_bottom_back  ,
-                            voxel::right_up_back     ,
+                            voxel::right_top_back    ,
                             voxel::right_bottom_back ,
             
             // Bottom face: First triangle
-            voxel::down,    voxel::right_bottom_back ,
+            voxel::bottom,  voxel::right_bottom_back ,
                             voxel::right_bottom_front,
                             voxel::left_bottom_front ,
             
@@ -79,34 +79,34 @@ namespace details {
                             voxel::left_bottom_front ,
                             voxel::left_bottom_back  ,
             
-            // Up face:     First triangle
-            voxel::up,      voxel::right_up_front    ,
-                            voxel::right_up_back     ,
-                            voxel::left_up_back      ,
+            // Top face:    First triangle
+            voxel::top,     voxel::right_top_front   ,
+                            voxel::right_top_back    ,
+                            voxel::left_top_back     ,
 
             //              Second triangle
-                            voxel::right_up_front    ,
-                            voxel::left_up_back      ,
-                            voxel::left_up_front     ,
+                            voxel::right_top_front   ,
+                            voxel::left_top_back     ,
+                            voxel::left_top_front    ,
             
             // Back face:   First triangle
             voxel::back,    voxel::left_bottom_front ,
-                            voxel::left_up_front     ,
-                            voxel::left_up_back      ,
+                            voxel::left_top_front    ,
+                            voxel::left_top_back     ,
             
             //              Second triangle
                             voxel::left_bottom_front ,
-                            voxel::left_up_back      ,
+                            voxel::left_top_back     ,
                             voxel::left_bottom_back  ,
             
             // Front face:  First triangle
             voxel::front,   voxel::right_bottom_back ,
-                            voxel::right_up_back     ,
-                            voxel::right_up_front    ,
+                            voxel::right_top_back    ,
+                            voxel::right_top_front   ,
             
             //              Second triangle
                             voxel::right_bottom_back ,
-                            voxel::right_up_front    ,
+                            voxel::right_top_front   ,
                             voxel::right_bottom_front
         };
     }
