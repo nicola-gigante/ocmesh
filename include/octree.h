@@ -73,10 +73,18 @@ public:
     bool empty() const { return _data.empty(); }
     
     /*
-     * Finds neighbor of a node in a given direction
+     * Finds neighbor of a node corresponding to the given face.
+     * A second face can be specified, to find 
+     * "the neighbor at face f2 of the neighbor at face f1" of this voxel, i.e.
+     * edge neighbors of this voxel.
      */
-    iterator       neighbor(const_iterator node, voxel::face d);
-    const_iterator neighbor(const_iterator node, voxel::face d) const;
+    iterator       neighbor(const_iterator node, voxel::face f);
+    const_iterator neighbor(const_iterator node, voxel::face f) const;
+
+    iterator       neighbor(const_iterator node,
+                            voxel::face f1, voxel::face f2);
+    const_iterator neighbor(const_iterator node,
+                            voxel::face f1, voxel::face f2) const;
     
     /*
      * This is the main function to recursively build an octree with a given

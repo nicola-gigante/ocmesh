@@ -22,17 +22,33 @@ namespace ocmesh {
 namespace details {
     
     octree::iterator
-    octree::neighbor(const_iterator node, voxel::face d)
+    octree::neighbor(const_iterator node, voxel::face f)
     {
-        voxel candidate = node->neighbor(d);
+        voxel candidate = node->neighbor(f);
         
         return std::lower_bound(begin(), end(), candidate);
     }
     
     octree::const_iterator
-    octree::neighbor(const_iterator node, voxel::face d) const
+    octree::neighbor(const_iterator node, voxel::face f) const
     {
-        voxel candidate = node->neighbor(d);
+        voxel candidate = node->neighbor(f);
+        
+        return std::lower_bound(begin(), end(), candidate);
+    }
+    
+    octree::iterator
+    octree::neighbor(const_iterator node, voxel::face f1, voxel::face f2)
+    {
+        voxel candidate = node->neighbor(f1).neighbor(f2);
+        
+        return std::lower_bound(begin(), end(), candidate);
+    }
+    
+    octree::const_iterator
+    octree::neighbor(const_iterator node, voxel::face f1, voxel::face f2) const
+    {
+        voxel candidate = node->neighbor(f1).neighbor(f2);
         
         return std::lower_bound(begin(), end(), candidate);
     }

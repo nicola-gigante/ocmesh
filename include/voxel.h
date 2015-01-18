@@ -354,12 +354,12 @@ voxel voxel::neighbor(face d) const
 inline
 std::array<voxel, 6> voxel::neighborhood() const {
     return {
-        neighbor(left ),
-        neighbor(right),
-        neighbor(down ),
-        neighbor(up   ),
-        neighbor(back ),
-        neighbor(front),
+        neighbor(left  ),
+        neighbor(right ),
+        neighbor(bottom),
+        neighbor(top   ),
+        neighbor(back  ),
+        neighbor(front )
     };
 }
 
