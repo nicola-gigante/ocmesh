@@ -1,4 +1,7 @@
+# Dependencies
 cpputils
+
+# OS X and Xcode files
 .DS_Store
 glm
 *.xcworkspace
@@ -7,3 +10,17 @@ xcuserdata/*
 *~
 *.swp
 *.dSYM
+
+# LaTeX products
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.synctex.gz
+*.toc
+*.vrb

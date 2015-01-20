@@ -1,0 +1,74 @@
+\documentclass[utf8x]{beamer}
+
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{verbatim}
+\usepackage{mathtools}
+\usepackage[T1]{fontenc}
+\usepackage[scaled]{beramono}
+
+\usetheme{Pittsburgh}
+
+\mathtoolsset{showonlyrefs}
+
+\lstset{language=[ISO]C++, basicstyle=\small\ttfamily}
+
+\title{OcMesh}
+\subtitle{Towards a hexahedral mesh generator}
+\author{Nicola Gigante}
+\date{January 22, 2015}
+
+\begin{document}
+\begin{frame}
+\maketitle
+\end{frame}
+
+\section{Introduction}
+\begin{frame}[fragile]{What are we talking about?}
+\verb|OcMesh|: a C++ tool and library for the generation of hexahedral meshes
+from CSG objects.
+\vfill
+What will we talk about today:
+\begin{itemize}
+\item What does OcMesh do?
+\item What are CSG objects
+\item OcMesh uses octrees to generate the mesh:
+      \begin{itemize}
+      \item What are octrees
+      \item How to represent them (efficiently)
+      \item How to build them
+      \item How to use them
+      \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The goal}
+\begin{itemize}
+\item Finite elements methods usually operate on tetrahedral meshes 
+      (triangle faces).
+\item Discretization of Maxwell constitutive relations on hexahedral meshes 
+      are introduced in \cite{Specogna2010}.
+\item Hexahedral meshes are missing.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Constructive Solid Geometry}
+The input geometry is specified as Constructive Solid Geometry:
+\begin{quote}
+A technique of solid modeling that allows the modeler to create a complex 
+surface or object by using Boolean operators to combine smaller objects.
+\end{quote}
+\end{frame}
+
+\section{Bibliography}
+\subsection{}
+\begin{frame}[allowframebreaks]
+\frametitle{Bibliography}
+\begin{center}
+\bibliographystyle{apalike}
+\bibliography{biblio}
+\end{center}
+\end{frame}
+
+\end{document}
