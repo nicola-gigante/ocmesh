@@ -1,18 +1,20 @@
 \documentclass[utf8x]{beamer}
 
+\usepackage[T1]{fontenc}
+\usepackage[scaled]{beramono}
 \usepackage{amsmath,amssymb}
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{verbatim}
 \usepackage{mathtools}
-\usepackage[T1]{fontenc}
-\usepackage[scaled]{beramono}
+\usepackage{graphicx}
+\usepackage{tikz}
 
 \usetheme{Pittsburgh}
 
 \mathtoolsset{showonlyrefs}
 
-\lstset{language=[ISO]C++, basicstyle=\small\ttfamily}
+\lstset{basicstyle=\small\ttfamily}
 
 \title{OcMesh}
 \subtitle{Towards a hexahedral mesh generator}
@@ -46,13 +48,14 @@ What will we talk about today:
 \begin{frame}{The goal}
 \begin{itemize}
 \item Finite elements methods usually operate on tetrahedral meshes 
-      (triangle faces).
-\item Discretization of Maxwell constitutive relations on hexahedral meshes 
-      are introduced in \cite{Specogna2010}.
-\item Hexahedral meshes are missing.
+      (triangular faces).
+\item Solving methods for partial differential equations by discretization on 
+      arbitrary hexahedral meshes are introduced e.g. in \cite{Specogna2010}.
+\item However, tools to create hexahedral meshes are missing.
 \end{itemize}
 \end{frame}
 
+\section{CSG}
 \begin{frame}{Constructive Solid Geometry}
 The input geometry is specified as Constructive Solid Geometry:
 \begin{quote}
@@ -66,7 +69,8 @@ We model the world starting from a couple of primitives:
 \begin{itemize}
 \item Cubes
 \item Spheres
-\item Possibly others: torus?
+\item Possibly others: cylinders, toruses, generic $f(x,y,z)$ distance 
+      functions..
 \end{itemize}
 Combined with a few operations:
 \begin{itemize}
@@ -75,6 +79,285 @@ Combined with a few operations:
 \item Difference
 \item Affine transforms
 \end{itemize}
+\end{frame}
+
+\begin{frame}{Example}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{wikicsg}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Example}
+\begin{lstlisting}
+object s = sphere(60) 
+object c = cube(100)
+
+object body = intersect(s, c)
+object cavity = scale(0.95, s)
+
+object result = subtract(body, cavity)
+
+material metal
+build metal result
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Example}
+\includegraphics[width=\textwidth]{example}
+\end{frame}
+
+\begin{frame}{How to handle CSG objects?}
+We'll see that all we need is a distance function:
+\begin{equation}
+f(x,y,z) = d\quad\text{such that}\quad
+  \begin{cases}
+    d \ge 0 & \text{if $(x,y,z)$ is \emph{outside} the object} \\
+    d <   0 & otherwise
+  \end{cases}
+\end{equation}
+We don't need the exact distance. Only the sign of the distance.
+\end{frame}
+
+\begin{frame}{Combining distance functions}
+\begin{itemize}
+\item Distance from primitives is easy.
+\item Boolean operators are implemented as suggested by \cite{Persson2005}:
+      \begin{align}
+        d_{A \cup      B}(\vec{p})  &= \min \{d_A(\vec{p}), 
+                                              \phantom{-}\, d_B(\vec{p})
+                                            \} 
+                                    && \text{Union} \\
+        d_{A \cap      B}(\vec{p})  &= \max \{d_A(\vec{p}), 
+                                              \phantom{-} d_B(\vec{p})
+                                            \}
+                                    && \text{Intersection} \\
+        d_{A \setminus B}(\vec{p})  &= \max \{d_A(\vec{p}), 
+                                              - d_B(\vec{p})
+                                            \} 
+                                    && \text{Difference}
+      \end{align}
+\end{itemize}
+\end{frame}
+
+\section{Octrees}
+\begin{frame}{Octrees}
+The octree is a space partitioning data structure used in many places in 
+computer graphics and other fields.
+\begin{itemize}
+\item It's a complete tree where each node is either a leaf or have exactly 
+      eight children.
+\item Each node represents a cube in the 3D space.
+\item Children of a node are its subdivided subcubes.
+\item Large portions of space with the same property (color, material, etc..) 
+      are represented with a big cube, i.e., a leaf high in the tree
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example in 2D (Quadtrees)}
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+
+\foreach \x in { 
+  (0,0), (4,0), (0,4), (4,4), (4,5), (5,4), (5,5), (4,6), (6,6), (6,4)
+} {
+  \path [above right, font=\tiny] \x node {\x};  
+}
+
+\draw (0,0) -- (8,0) -- (8,8) -- (0,8) -- cycle;
+\draw (0,4) -- (8,4);
+\draw (4,0) -- (4,8);
+\draw (4,6) -- (8,6);
+\draw (6,4) -- (6,8);
+\draw (5,4) -- (5,6);
+\draw (4,5) -- (6,5);
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Example in 2D (Quadtrees)}
+\begin{center}
+\begin{tikzpicture}[font=\small]
+\node {(0,0)}
+  child {
+    node {(0,0)}
+  }
+  child {
+    node {(4,0)}
+  }
+  child {
+    node {(0,4)}
+  }
+  child {
+    node {(4,4)}
+    child {
+      node {(4,4)}
+      child {
+        node {(4,4)}
+      }
+      child {
+        node {(5,4)}
+      }
+      child {
+        node {(4,5)}
+      }
+      child {
+        node {(5,5)}
+      }
+    }
+    child {
+      node {(6,4)}
+    }
+    child {
+      node {(4,6)}
+    }
+    child {
+      node {(6,6)}
+    }
+  };
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Octrees}
+A couple of observations:
+\begin{itemize}
+\item The height of the node determines the size of the corresponding cube,
+      given the size of the topmost, biggest cube.
+\item To get the node corresponding to a $(x,y,z)$ coordinate is an 
+      $\mathcal{O}(\log n)$ tree search.
+\end{itemize} 
+\end{frame}
+
+\begin{frame}{Mesh subdivision}
+We build the octree from the CSG object by iterative subdivision:
+\begin{itemize}
+\item Make a queue of cubes, the first one being the root cube.
+\item Given the next cube from the queue, how does it relate the objects in 
+      the scene?
+      \begin{itemize}
+      \item It's completely inside of (only) one object: assign the object's 
+            material to the cube.
+      \item It's on the boundary: subdivide the cube and enqueue the children.
+      \end{itemize}
+\end{itemize}
+Note: this is breadth first. Depth-first is also ok.
+\end{frame}
+
+\begin{frame}{Linear octrees}
+Memory consumption in the tree representation of octrees is huge:
+\begin{itemize}
+\item 4/8 bytes for each pointer to children
+\item 8 children
+\item Millions of nodes
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Linear octrees}
+We need a compact representation.
+\begin{itemize}
+\item We use a linear octree
+\item An array of ordered \emph{location codes} representing the octree's 
+      \emph{leaves}
+\item Space requirements are greatly reduced by storing only the leaves, 
+      without any pointer
+\end{itemize}
+First introduced by \cite{Gargantini82}.
+\end{frame}
+
+\begin{frame}{Linear octrees}
+Leaves in the array are stored in traversal order, and identified by their
+\emph{location code}:
+\begin{center}
+\begin{tikzpicture}[scale=0.7, font=\small]
+\node {0}
+  child {
+    node {0}
+  }
+  child {
+    node {16}
+  }
+  child {
+    node {32}
+  }
+  child {
+    node {48}
+    child {
+      node {48}
+      child {
+        node {48}
+      }
+      child {
+        node {49}
+      }
+      child {
+        node {50}
+      }
+      child {
+        node {51}
+      }
+    }
+    child {
+      node {52}
+    }
+    child {
+      node {56}
+    }
+    child {
+      node {60}
+    }
+  };
+\end{tikzpicture}
+\end{center}
+Linear Octree = \{0, 16, 32, 48, 49, 50, 51, 52, 56, 60\}
+\end{frame}
+
+\begin{frame}{Location codes}
+\begin{itemize}
+\item Children of each node in the tree are listed in \emph{Morton order}:
+\end{itemize}
+\begin{center}
+\begin{tikzpicture}[scale=0.5]
+
+\draw (0,0) -- (8,0) -- (8,8) -- (0,8) -- cycle;
+\draw (0,4) -- (8,4);
+\draw (4,0) -- (4,8);
+\draw (4,6) -- (8,6);
+\draw (6,4) -- (6,8);
+\draw (5,4) -- (5,6);
+\draw (4,5) -- (6,5);
+
+\draw [->] (2,2)     -- (6,2)      -- (2,6)      --
+           (4.5,4.5) -- (5.5, 4.5) -- (4.5, 5.5) -- (5.5, 5.5) --
+           (7,5)     -- (5,7)      -- (7,7);
+\end{tikzpicture}
+\end{center}
+\begin{itemize}
+\item So the traversal order of the tree is spatially contiguous 
+\item The space-filling curve above is called \emph{Morton curve} 
+      \cite{Morton66}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Computing Morton codes}
+The Morton code of a point in space can be computed from its coordinates very
+efficiently by \emph{bit interleaving}.
+
+\begin{equation}
+morton(5,4) = morton(\underline{101}, \overline{100}) = 
+\overline{1}
+\underline{1}
+\overline{0}
+\underline{0}
+\overline{0}
+\underline{1} = 49
+\end{equation}
+To see why, note that while moving through the Morton curve:
+\begin{itemize}
+\item The $x$ component always changes
+\item The $y$ component changes every two steps
+\item The $z$ component changes every four steps
+\end{itemize} 
 \end{frame}
 
 \section{Bibliography}
