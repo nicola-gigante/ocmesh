@@ -11,6 +11,7 @@
 		C96E770019F951E800148261 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E76FF19F951E800148261 /* main.cpp */; };
 		C96E770219F951FB00148261 /* csg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E770119F951FB00148261 /* csg.cpp */; };
 		C9A41EB41A50ACB300DE285E /* obj.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9A41EB21A50ACB300DE285E /* obj.cpp */; };
+		C9DDF50B1A6FED2900204884 /* TODO.md in Sources */ = {isa = PBXBuildFile; fileRef = C9DDF50A1A6FED2900204884 /* TODO.md */; };
 		C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9EAC3931A474BC2001CB704 /* octree.cpp */; };
 /* End PBXBuildFile section */
 
@@ -302,6 +303,7 @@
 		C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpputils.xcodeproj; path = cpputils/cpputils.xcodeproj; sourceTree = SOURCE_ROOT; };
 		C9AB64891A51A13800F523A7 /* cube.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cube.obj; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.sh; };
 		C9AD92861A45941C00736AF9 /* glm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glm.h; sourceTree = "<group>"; };
+		C9DDF50A1A6FED2900204884 /* TODO.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 		C9E910CC1A07C3C0005A1AF0 /* NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOTES.md; sourceTree = "<group>"; };
 		C9EAC3911A4725B5001CB704 /* octree.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = octree.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		C9EAC3931A474BC2001CB704 /* octree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = octree.cpp; sourceTree = "<group>"; };
@@ -323,6 +325,7 @@
 			children = (
 				C9A60E6819FBD79300C8297B /* cpputils.xcodeproj */,
 				C96E75F519F8F9B700148261 /* README.md */,
+				C9DDF50A1A6FED2900204884 /* TODO.md */,
 				C9E910CC1A07C3C0005A1AF0 /* NOTES.md */,
 				C96E75F819F8FF7E00148261 /* glm */,
 				C96E76FB19F951CB00148261 /* include */,
@@ -744,6 +747,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9DDF50B1A6FED2900204884 /* TODO.md in Sources */,
 				C95005311A4AF478009BD371 /* csg_parser.cpp in Sources */,
 				C96E770019F951E800148261 /* main.cpp in Sources */,
 				C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */,

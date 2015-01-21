@@ -4,14 +4,19 @@
 
 # We can assign names to primitives and reuse them
 
-object obj1 = translate({100, 200, 100}, sphere(100))
-object obj2 = translate({100, 100, 100}, cube(200))
+object s = sphere(60)
+object c = cube(100)
 
-object result = unite(obj2, obj1)
+object body = intersect(s, c)
+object cavity = scale(0.95, s)
+
+object result = subtract(body, cavity)
 
 # Materials have to be declared
+
 material metal
 
-# mycup is declared as one of the final objects of the scene,
+# result is declared as one of the final objects of the scene,
 # so we must set the material
+
 build metal result

@@ -141,7 +141,7 @@ namespace ocmesh {
         }
         
         float intersection_t::distance(const glm::vec3 &from) {
-            return std::max(left()->distance(from), - right()->distance(from));
+            return std::max(left()->distance(from), right()->distance(from));
         }
         
         /*
@@ -160,7 +160,7 @@ namespace ocmesh {
         }
         
         float difference_t::distance(const glm::vec3 &from) {
-            return std::max(left()->distance(from), right()->distance(from));
+            return std::max(left()->distance(from), - right()->distance(from));
         }
         
         void difference_t::dump(std::ostream &o) const {

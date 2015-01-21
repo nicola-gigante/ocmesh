@@ -10,7 +10,8 @@ Here the missing features
 Optionals/to be discussed:
 * Better command line options parsing
 * Better format for description of CSG scenes.
-  Maybe it's worth to simply provide a python binding to the library
+  - Scale and rotate should ignore translation?
+  - Maybe it's worth to simply provide a python binding to the library
 * Support for specifying the precision in both percentage (as is now)
   and absolute values, and allow it to be specified from the command line
   and/or from the CSG file.
