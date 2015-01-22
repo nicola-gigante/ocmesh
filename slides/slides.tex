@@ -16,6 +16,8 @@
 
 \lstset{basicstyle=\small\ttfamily}
 
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
 \title{OcMesh}
 \subtitle{Towards a hexahedral mesh generator}
 \author{Nicola Gigante}
@@ -55,7 +57,7 @@ What will we talk about today:
 \end{itemize}
 \end{frame}
 
-\section{CSG}
+\section{Constructive Solid Geometry}
 \begin{frame}{Constructive Solid Geometry}
 The input geometry is specified as Constructive Solid Geometry:
 \begin{quote}
@@ -89,16 +91,18 @@ Combined with a few operations:
 
 \begin{frame}[fragile]{Example}
 \begin{lstlisting}
-object s = sphere(60) 
+# CSG description file parsed by OcMesh
+
+object s = sphere(60) # Primitives
 object c = cube(100)
 
-object body = intersect(s, c)
+object body = intersect(s, c) # Binary operations
 object cavity = scale(0.95, s)
 
 object result = subtract(body, cavity)
 
-material metal
-build metal result
+material metal     # Declare a new material
+build metal result # Submit the object for construction
 \end{lstlisting}
 \end{frame}
 
@@ -357,7 +361,157 @@ To see why, note that while moving through the Morton curve:
 \item The $x$ component always changes
 \item The $y$ component changes every two steps
 \item The $z$ component changes every four steps
+\end{itemize}
+Note: you have to fix the maximum depth of the tree in advance.
+\end{frame}
+
+\begin{frame}[fragile]{Bit interleaving}
+How to compute the bit interleaving? Black magic.
+\begin{lstlisting}
+enum coordinate_t { x = 0, y = 1, z = 2 };
+
+uint64_t morton(uint32_t value, coordinate_t coord)
+{
+  uint64_t x = value;
+  
+  x = (x | (x << 32)) & 0xFFFF00000000FFFF;
+  x = (x | (x << 16)) & 0x00FF0000FF0000FF;
+  x = (x | (x <<  8)) & 0xF00F00F00F00F00F;
+  x = (x | (x <<  4)) & 0x30C30C30C30C30C3;
+  x = (x | (x <<  2)) & 0x9249249249249249;
+  
+  return (x << uint8_t(coord));
+}
+\end{lstlisting}
+The only way to get it is doing it on paper and see what happens.
+\end{frame}
+
+\begin{frame}{Voxels}
+A single cubie in the octree is represented by a 64bits word that we call a 
+\emph{voxel}. 
+
+It stores:
+\begin{itemize}
+\item The morton code of the coordinates
+\item The level in the tree (zero at the leaves)
+\item Possibly additional data (material of the cube in our application)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Voxels}
+How to set the size of each field?
+\begin{itemize}
+\item Decide the precision $p$ for the coordinates, say $p=13$ (bits)
+\item The maximum number of cubies in the octree is:
+      \begin{equation}
+      N=(2^p)^3 = 8^p
+      \end{equation}
+\item Thus the maximum height of the tree is:
+      \begin{equation}
+      h_{max} = \log_8 N = p
+      \end{equation}
+      The maximum height is the number of bits used for the coordinates!
+\item We need $\floor{\log_2 h_{max}} + 1$ bits to store the level/height.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Voxels}
+So we use a 64bits word subdivided by default as follows:
+\begin{itemize}
+\item $p=13$ bits of precision for each axis \\
+      Good enough: a precision of $1mm$ with a range of $10m$
+\item $4$ bits to store the level
+\item The remaining $21$ bits to store the material of the cube.\\
+      Two millions materials are enough in most cases.
+\end{itemize}
+Can be tuned to have more precision if the number of materials is smaller 
+(and probably is).
+\end{frame}
+
+\begin{frame}[fragile]{Voxels in the linear octree}
+\begin{itemize}
+\item Voxels are stored ordered in the linear octree.
+\item The morton code is at the most significant bits, the level after it, and 
+      the material last.
+\item This way the natural ordering of \verb|uint64_t| is what we want:
+      \begin{itemize}
+      \item To search for a voxel we can compute the morton code of its 
+      coordinates and set \emph{level} and \emph{material} to zero. The binary
+      search will stop exactly before the position of the voxel.
+      \end{itemize}
 \end{itemize} 
+\end{frame}
+
+\begin{frame}{Tree balancing}
+To be useful for successive processing, the mesh must be 
+\emph{2-1 edge-balanced}:
+\begin{itemize}
+\item For each cube, each of its neighbors can be at most 2 times as 
+      big (in terms of edge lengths)
+\item A cube is considered a neighbor if the two cubes touch on a face or on 
+      an edge
+\end{itemize}
+How to find the neighbors of a cube in the tree?
+\end{frame}
+
+\begin{frame}{Linear octree balancing}
+Finding the neighbors is done in two steps:
+\begin{itemize}
+\item Compute the location code of an hypothetical same-size neighbor
+      \begin{itemize}
+      \item Add the right offset to the coordinates depending on the direction.
+      \end{itemize}
+\item Search the neighbor in the tree.
+      \begin{itemize}
+      \item Usual binary search
+      \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Neighbor location - performance}
+What could go wrong?
+\begin{itemize}
+\item $6 \cdot 4 + 12 \cdot 2=48$ neighbors to find for each cube.
+\item $48$ binary searches on a very big array (CPU cache destroyed).
+\item Too slow to even think about it.
+\end{itemize}
+Future solution:
+\begin{itemize}
+\item Fast algorithm to find the common ancestor of two nodes in the linear 
+      octree, provided in \cite{Yoder2006}.
+\item Make the binary search collect all the keys in one pass.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{The OcMesh library}
+What does the API look like?
+\begin{lstlisting}
+csg::scene scene;
+
+csg::object *s      = scene.sphere(60);
+csg::object *c      = scene.cube(100);
+csg::object *body   = intersect(s, c);
+csg::object *cavity = scale(0.95, s);
+csg::object *result = subtract(body, cavity);
+
+const voxel::material_t metal = 42;
+
+scene.toplevel(result, metal);
+
+octree tree;
+tree.build(scene, 0.01);
+
+tree.mesh("/my/mesh/file.obj");
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Future developments}
+On the library side (besides the development of the final goal):
+\begin{itemize}
+\item Improve the CSG expression language
+\item Profile and optimize: neighborhood finding, balancing, subdivision
+\item Parallelization (easy to do, hard to do really fast)
+\end{itemize}
 \end{frame}
 
 \section{Bibliography}
