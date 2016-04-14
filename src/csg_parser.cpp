@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "utils/support.h"
-#include "utils/string_switch.h"
 
 #include "csg.h"
 #include "voxel.h"
+
+#include "utils/support.h"
+#include "utils/string_switch.h"
 
 #include <fstream>
 #include <map>
