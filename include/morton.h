@@ -20,6 +20,25 @@
 
 #include "glm.h"
 
+#if __GNUC__  < 5 && !__clang__
+
+#include <algorithm>
+
+namespace std
+{
+	template <std::size_t Len, class... Types>
+	struct aligned_union
+	{
+		static constexpr std::size_t alignment_value = std::max({alignof(Types)...});
+
+		struct type
+		{
+			alignas(alignment_value) char _s[std::max({Len, sizeof(Types)...})];
+		};
+	};
+}
+#endif
+
 #include <std14/utility>
 #include <std14/array>
 

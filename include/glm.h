@@ -23,10 +23,12 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #pragma clang diagnostic ignored "-Wsign-compare"
 
+#define GLM_SWIZZLE
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
-#include <glm/gtx/extented_min_max.hpp>
+//#include <glm/gtx/extented_min_max.hpp>
 
 #pragma clang diagnostic pop
 

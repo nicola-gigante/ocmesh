@@ -1,0 +1,6 @@
+[submodule "deps/cpputils"]
+	path = deps/cpputils
+	url = https://github.com/nicola-gigante/cpputils.git
+[submodule "deps/glm"]
+	path = deps/glm
+	url = https://github.com/g-truc/glm.git
