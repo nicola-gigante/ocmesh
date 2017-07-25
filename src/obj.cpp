@@ -17,8 +17,6 @@
 #include "octree.h"
 #include "glm.h"
 
-#include "utils/map_iterator.h"
-
 #include <vector>
 #include <tuple>
 #include <iterator>

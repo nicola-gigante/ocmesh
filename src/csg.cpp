@@ -16,8 +16,6 @@
 
 #include "csg.h"
 
-#include "utils/map_iterator.h"
-
 #include <ostream>
 #include <algorithm>
 #include <numeric>

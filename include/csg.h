@@ -119,7 +119,7 @@ namespace details {
         float cube_side(glm::vec3 min, glm::vec3 max) {
             glm::vec3 sides = max - min;
             
-            return glm::max(sides.x, sides.y, sides.z);
+            return glm::max(glm::max(sides.x, sides.y), sides.z);
         }
         
     public:
