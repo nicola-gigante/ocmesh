@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef OCMESH_object_H__
-#define OCMESH_object_H__
+#ifndef OCMESH_object_H
+#define OCMESH_object_H
 
 #include "glm.h"
 #include "voxel.h"

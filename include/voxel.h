@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef OCMESH_VOXEL_H__
-#define OCMESH_VOXEL_H__
+#ifndef OCMESH_VOXEL_H
+#define OCMESH_VOXEL_H
 
 #include <array>
 #include <cmath>

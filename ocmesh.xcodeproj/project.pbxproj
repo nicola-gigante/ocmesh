@@ -11,7 +11,6 @@
 		C96E770019F951E800148261 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E76FF19F951E800148261 /* main.cpp */; };
 		C96E770219F951FB00148261 /* csg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C96E770119F951FB00148261 /* csg.cpp */; };
 		C9A41EB41A50ACB300DE285E /* obj.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9A41EB21A50ACB300DE285E /* obj.cpp */; };
-		C9DDF50B1A6FED2900204884 /* TODO.md in Sources */ = {isa = PBXBuildFile; fileRef = C9DDF50A1A6FED2900204884 /* TODO.md */; };
 		C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9EAC3931A474BC2001CB704 /* octree.cpp */; };
 /* End PBXBuildFile section */
 
@@ -701,7 +700,7 @@
 		C96E75DE19F8F69B00148261 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0610;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Nicola Gigante";
 				TargetAttributes = {
 					C96E75E519F8F69B00148261 = {
@@ -747,7 +746,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9DDF50B1A6FED2900204884 /* TODO.md in Sources */,
 				C95005311A4AF478009BD371 /* csg_parser.cpp in Sources */,
 				C96E770019F951E800148261 /* main.cpp in Sources */,
 				C9EAC3941A474BC2001CB704 /* octree.cpp in Sources */,
@@ -778,6 +776,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -794,6 +793,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/glm",
 					"$(SRCROOT)/cpputils/include",
+					/usr/local/include,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -853,6 +853,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/glm",
 					"$(SRCROOT)/cpputils/include",
+					/usr/local/include,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				MTL_ENABLE_DEBUG_INFO = NO;

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef OCMESH_OCTREE_H__
-#define OCMESH_OCTREE_H__
+#ifndef OCMESH_OCTREE_H
+#define OCMESH_OCTREE_H
 
 #include "csg.h"
 #include "voxel.h"

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef OCMESH_GLM_H__
-#define OCMESH_GLM_H__
+#ifndef OCMESH_GLM_H
+#define OCMESH_GLM_H
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation"
