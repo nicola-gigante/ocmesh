@@ -23,6 +23,7 @@
 #include "glm.h"
 
 #include <deque>
+#include <functional>
 
 namespace ocmesh {
 namespace details {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.4)
+cmake_minimum_required(VERSION 3.18)
 
 set(name ocmesh)
 
@@ -15,7 +15,9 @@ set(SOURCE_FILES
 
 project(${name})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 
 include_directories(include
         deps/cpputils/include
