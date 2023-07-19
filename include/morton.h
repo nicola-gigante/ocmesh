@@ -39,8 +39,8 @@ namespace std
 }
 #endif
 
-#include <std14/utility>
-#include <std14/array>
+#include <utility>
+#include <array>
 
 #include <cassert>
 #include <cstdint>

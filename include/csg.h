@@ -20,7 +20,7 @@
 #include "glm.h"
 #include "voxel.h"
 
-#include <std14/memory>
+#include <memory>
 #include <iterator>
 #include <istream>
 #include <ostream>
@@ -213,7 +213,7 @@ namespace details {
                  REQUIRES(std::is_constructible<T, scene *, Args...>())>
         T *make(Args&& ...args)
         {
-            auto p = std14::make_unique<T>(this, std::forward<Args>(args)...);
+            auto p = std::make_unique<T>(this, std::forward<Args>(args)...);
             T *r = p.get();
             _objects.push_back(std::move(p));
             return r;
